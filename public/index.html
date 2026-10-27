@@ -1,0 +1,2066 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Remix Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: app shell — sticky left sidebar (brand, theme, feature nav, viewer) + one working column of numbered steps per page */
+:root{
+  --bg:#eef0f4; --side:#e4e7ed; --panel:#ffffff; --sunk:#eceef2; --line:#d6dae1;
+  --fg:#14171c; --muted:#5b6471; --accent:#ff3d6e; --accent-fg:#ffffff; --sel:#ffe3ea;
+  --ok:#11977a; --warn:#b86e00; --bad:#d6334f; --hl:#ffd60a;
+  --f-ui:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0f13; --side:#111419; --panel:#161920; --sunk:#1e222a; --line:#2a2f39;
+  --fg:#eceef2; --muted:#97a0ad; --accent:#ff4f7b; --accent-fg:#ffffff; --sel:#3a1822;
+  --ok:#2fcf9f; --warn:#f0a531; --bad:#ff6680; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0f13; --side:#111419; --panel:#161920; --sunk:#1e222a; --line:#2a2f39;
+  --fg:#eceef2; --muted:#97a0ad; --accent:#ff4f7b; --accent-fg:#ffffff; --sel:#3a1822;
+  --ok:#2fcf9f; --warn:#f0a531; --bad:#ff6680; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);gap:28px;max-width:1280px;margin:0 auto}
+/* sidebar */
+.side{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));height:calc(100dvh - 32px);background:var(--side);border:1px solid var(--line);border-radius:var(--r);
+  display:flex;flex-direction:column;gap:14px;padding:16px 12px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 4px}
+.mark{width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:800;letter-spacing:-.04em;flex:none}
+.brand b{display:block;font-weight:800;font-size:15px;letter-spacing:.02em}
+.brand small{font-size:11px;color:var(--muted);font-weight:600}
+.theme{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:9px;padding:8px;font:600 13px var(--f-ui);cursor:pointer}
+.navlbl{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0 6px;margin-top:4px}
+nav{display:grid;gap:4px}
+nav a{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;align-items:center;padding:9px 8px;border-radius:9px;text-decoration:none;color:var(--fg);border:1px solid transparent}
+nav a:hover{background:var(--panel)}
+nav a.on{background:var(--panel);border-color:var(--accent)}
+nav a.on .ic{background:var(--accent);color:var(--accent-fg)}
+nav .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:12px;background:var(--sunk);color:var(--muted)}
+nav b{display:block;font-weight:600;font-size:13.5px;line-height:1.25}
+nav small{display:block;color:var(--muted);font-size:11.5px;line-height:1.3}
+.me{margin-top:auto;display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:12px 4px 0;min-width:0}
+.me img{width:32px;height:32px;border-radius:50%;background:var(--sunk);flex:none}
+.me div{min-width:0}
+.me b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me small{color:var(--muted);font-size:11.5px}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);gap:14px}
+  .side{position:static;height:auto;flex-direction:column;gap:10px;padding:12px}
+  .side .navlbl,.side .me{display:none}
+  nav{grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;padding-bottom:4px}
+  nav a{grid-template-columns:22px auto}
+  nav small{display:none}
+}
+/* pages */
+main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.page{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ph h1{font-size:22px;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.ph p{margin:4px 0 0;color:var(--muted);max-width:75ch}
+.howto{border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));background:color-mix(in srgb,var(--accent) 6%,var(--panel));border-radius:10px;padding:11px 14px;font-size:13px}
+.howto b{color:var(--accent)}
+section.step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:16px;min-width:0}
+.sh{display:flex;align-items:center;gap:12px}
+.num{width:30px;height:30px;border-radius:8px;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+h2{font-size:16.5px;margin:0;font-weight:700;text-wrap:balance}
+.lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
+.hint{font-size:12.5px;color:var(--muted);margin:0;max-width:75ch}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:20px 16px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.drop b{color:var(--accent)}
+.drop.sm{padding:12px}
+.listhead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.list{display:grid;gap:6px;max-height:300px;overflow-y:auto;padding-right:4px}
+.item{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;background:var(--sunk);border-radius:8px;padding:6px 10px 6px 6px}
+.item img{width:40px;height:52px;object-fit:cover;border-radius:5px;background:#000}
+.nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.nm small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.mono{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.q{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok);white-space:nowrap}
+.q.hd{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.q.sd{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.q.ex{background:var(--line);color:var(--muted)}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:4px 6px;border-radius:6px}
+.x:hover{color:var(--bad)}
+@media (max-width:560px){.item{grid-template-columns:40px minmax(0,1fr) auto}.item .mono{display:none}}
+.info{border:1px solid color-mix(in srgb,var(--ok) 40%,var(--line));background:color-mix(in srgb,var(--ok) 8%,transparent);border-radius:8px;padding:9px 12px;font-size:13px}
+.info b{color:var(--ok)}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
+.field{display:grid;gap:6px;align-content:start;min-width:0}
+input[type=number],input[type=text],input[type=date],select,textarea{width:100%;border:1px solid var(--line);background:var(--sunk);color:var(--fg);border-radius:8px;padding:9px 11px;font:500 14px var(--f-ui)}
+textarea{min-height:110px;resize:vertical;line-height:1.55}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.seg button{border:1px solid var(--line);background:var(--sunk);color:var(--muted);font:600 13.5px var(--f-ui);padding:10px 0;border-radius:8px;cursor:pointer}
+.seg button.on{border-color:var(--accent);color:var(--fg);background:var(--sel)}
+.seg.two{grid-template-columns:repeat(2,1fr);max-width:440px}
+.seg.three{grid-template-columns:repeat(3,1fr);max-width:620px}
+@media (max-width:520px){.seg.three{grid-template-columns:minmax(0,1fr)}}
+.login{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--bg) 92%,transparent);display:grid;place-items:center;padding:16px}
+.login form{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:12px;width:min(360px,100%)}
+.vrows{display:grid;gap:10px}
+.vrow{border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:12px;display:grid;gap:8px;min-width:0}
+.vrow textarea{background:var(--panel)}
+.vrow audio{width:100%;max-width:420px;height:36px}
+.check{display:flex;gap:10px;align-items:flex-start}
+.check input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.check b{font-weight:600}
+.warn{color:var(--bad);font-size:13px;font-weight:500;margin:0}
+.btn{border:1px solid var(--line);background:var(--sunk);color:var(--fg);border-radius:9px;padding:10px 18px;font:700 14px var(--f-ui);cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.small{padding:7px 12px;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-visible,nav a:focus-visible,.theme:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.slider{display:grid;gap:4px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.prog{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.status{font-size:13.5px;font-weight:600}
+.status.err{color:var(--bad)}
+.stagewrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.stagewrap canvas{width:150px;aspect-ratio:9/16;max-width:100%;background:#000;border-radius:8px;display:block}
+@media (max-width:520px){.stagewrap{grid-template-columns:minmax(0,1fr)}.stagewrap canvas{width:120px}}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;background:var(--panel);min-width:0}
+.card video{width:100%;aspect-ratio:9/16;max-height:380px;background:#000;display:block;object-fit:contain}
+.card .cb{padding:12px 14px 14px;display:grid;gap:7px}
+.card h3{margin:0;font-size:14px;font-family:var(--f-mono);font-weight:500;overflow-wrap:anywhere}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:var(--sel);color:var(--accent)}
+.ov{font-size:12.5px;font-weight:600}
+.ov.lo{color:var(--ok)}.ov.mid{color:var(--warn)}.ov.hi{color:var(--bad)}
+.script{background:var(--sunk);border-radius:7px;padding:8px 10px;font-size:12.5px;max-height:96px;overflow-y:auto;color:var(--fg);white-space:pre-line}
+.empty{color:var(--muted);font-size:13.5px;border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center}
+.notice{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 12px;font-size:13px}
+/* source scenes */
+.scenes{display:grid;gap:12px}
+.scene{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;background:var(--sunk)}
+.scene .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.pc{font-family:var(--f-mono);font-size:12px;font-weight:500;background:var(--fg);color:var(--bg);border-radius:6px;padding:4px 8px}
+.scene input[type=text]{background:var(--panel)}
+.clips{display:flex;gap:8px;flex-wrap:wrap}
+.clip{position:relative;width:64px}
+.clip img{width:64px;height:88px;object-fit:cover;border-radius:6px;background:#000;display:block}
+.clip span{display:block;font-size:10.5px;color:var(--muted);text-align:center;font-family:var(--f-mono)}
+.clip button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:#000b;color:#fff;cursor:pointer;font-size:11px;line-height:20px;padding:0}
+.addclip{width:64px;height:88px;border:1.5px dashed var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:22px;background:var(--panel)}
+.addclip:hover,.addclip.over{border-color:var(--accent);color:var(--accent)}
+.meter{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+/* library */
+.group{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);overflow:hidden}
+.group header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line)}
+.group header b{font-family:var(--f-mono);font-weight:500}
+.group .results{padding:16px}
+/* tables + tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:12.5px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:12.5px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:var(--sunk);color:var(--muted)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.chip.part{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.pick{display:grid;gap:6px;max-height:260px;overflow-y:auto}
+.pick label{display:flex;gap:10px;align-items:center;background:var(--sunk);border-radius:8px;padding:6px 10px;cursor:pointer}
+.pick input{accent-color:var(--accent)}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;font-weight:600;color:var(--bad)}
+.avatar{width:56px;height:56px;border-radius:50%;background:var(--sunk)}
+/* subtitle styling */
+.subwrap{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:20px;align-items:start}
+.subctl{display:grid;gap:14px;min-width:0}
+.subprev{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));display:grid;gap:8px}
+#sPrev{width:100%;aspect-ratio:9/16;border-radius:10px;background:#000;display:block}
+#sPrev,#sText{max-width:100%}
+.presetrow{display:flex;gap:6px;flex-wrap:wrap}
+.presetrow button{border:1px solid var(--line);background:var(--sunk);color:var(--fg);border-radius:999px;padding:6px 12px;font:600 12.5px var(--f-ui);cursor:pointer}
+.presetrow button:hover{border-color:var(--accent)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.swatches button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--panel) inset}
+input[type=color]{width:100%;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:3px;cursor:pointer}
+#sHl{width:44px}
+@media (max-width:760px){.subwrap{grid-template-columns:minmax(0,1fr)}.subprev{position:static;max-width:260px}}
+/* video editor */
+.editor{border:1.5px solid var(--accent);border-radius:var(--r);padding:16px;display:grid;gap:14px;background:var(--panel);min-width:0}
+.editor h3{margin:0;font-size:15.5px}
+.eseg{border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:12px;display:grid;gap:10px;min-width:0}
+.eseg textarea{min-height:52px;background:var(--panel)}
+.eclips{display:grid;gap:6px}
+.eclip{display:grid;grid-template-columns:44px minmax(0,1fr) 84px auto;gap:10px;align-items:center;background:var(--panel);border-radius:8px;padding:5px 8px 5px 5px}
+.eclip img{width:44px;height:64px;object-fit:cover;border-radius:5px;background:#000}
+.eclip input{padding:6px 8px;font-size:13px}
+.eclip .acts{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.eclip .acts button{border:1px solid var(--line);background:var(--sunk);color:var(--fg);border-radius:6px;font:600 12px var(--f-ui);padding:5px 8px;cursor:pointer}
+.eclip .acts button:hover{border-color:var(--accent)}
+@media (max-width:560px){.eclip{grid-template-columns:44px minmax(0,1fr)}.eclip input,.eclip .acts{grid-column:2}.eclip .acts{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){.prog i,.drop{transition:none}}
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark">RX</div><div><b>REMIX STUDIO</b><small>Video quảng cáo 9:16</small></div></div>
+    <button class="theme" id="themeBtn">☀ Giao diện sáng</button>
+    <div class="navlbl">Tính năng</div>
+    <nav id="nav">
+      <a href="#remix" data-r="remix"><span class="ic">▶</span><span><b>Remix video</b><small>Cắt ghép + kịch bản AI</small></span></a>
+      <a href="#source" data-r="source"><span class="ic">▤</span><span><b>Tạo Source Video</b><small>Dựng theo phân cảnh</small></span></a>
+      <a href="#library" data-r="library"><span class="ic">▦</span><span><b>Video đã tạo</b><small>Xem lại và tải về</small></span></a>
+      <a href="#autopost" data-r="autopost"><span class="ic">◷</span><span><b>Lịch đăng video</b><small>Lên lịch và caption</small></span></a>
+      <a href="#log" data-r="log"><span class="ic">≡</span><span><b>Nhật ký tạo video</b><small>Đối soát số video</small></span></a>
+      <a href="#account" data-r="account"><span class="ic">●</span><span><b>Tài khoản</b><small>Dữ liệu và cài đặt</small></span></a>
+    </nav>
+    <div class="me"><img id="meAv" alt=""><div><b id="meName">Khách</b><small>Dữ liệu lưu trên máy này</small></div></div>
+  </aside>
+
+  <main>
+    <!-- ============ REMIX ============ -->
+    <div class="page" id="pg-remix">
+      <div class="ph"><h1>Remix video</h1><p>Tải lên các cảnh quay sản phẩm, hệ thống tự cắt cảnh và ghép thành nhiều video khác nhau.</p></div>
+      <section class="step">
+        <div class="sh"><div class="num">1</div><h2>Chọn video đầu vào</h2></div>
+        <div class="drop" id="drop" tabindex="0" role="button">🎞 Kéo thả video vào đây hoặc <b>bấm để chọn file</b> · tối đa 30 video</div>
+        <input type="file" id="vfiles" accept="video/*" multiple hidden>
+        <div class="listhead"><div><b id="cnt">0/30 video</b> <span class="mono" id="tot"></span></div><span class="hint" id="exnote">Đang dùng 3 video mẫu. Tải video của bạn lên để thay.</span></div>
+        <div class="list" id="list"></div>
+        <div class="info">Video tạo ra sẽ là <b>1080×1920 (Full HD, 9:16)</b>, đúng khổ TikTok, Reels và Shorts.</div>
+      </section>
+      <section class="step">
+        <div class="sh"><div class="num">2</div><h2>Cài đặt video</h2></div>
+        <div class="grid g4">
+          <div class="field"><span class="lbl">Số lượng video đầu ra</span><input type="number" id="count" min="1" max="50" value="3"><span class="hint">Số video mới cần tạo (1–50)</span></div>
+          <div class="field"><span class="lbl">Thời lượng mong muốn (giây)</span><input type="number" id="dur" min="10" max="60" value="15"><span class="hint">Mỗi video dài 10–60 giây</span></div>
+          <div class="field"><span class="lbl">Độ nhạy cắt cảnh</span>
+            <select id="sens"><option value="hi">Cao: cảnh ngắn 2,5–5 giây, nhịp nhanh</option><option value="auto" selected>Trung bình: máy tự chọn</option><option value="lo">Thấp: cảnh dài 8–14 giây, mượt</option></select>
+            <span class="hint">Cảnh càng ngắn thì các video càng ít trùng nhau nhưng nhịp nhanh hơn.</span></div>
+          <div class="field"><span class="lbl">Chế độ remix</span>
+            <select id="mode"><option value="std">Tiêu chuẩn: cắt ghép bình thường</option><option value="noface">Thông minh: bỏ cảnh có mặt người</option><option value="zoom">Thông minh: zoom cận sản phẩm, bỏ phần mặt</option></select>
+            <span class="hint" id="modehint">Chế độ thông minh dùng Claude để nhận diện khung hình.</span></div>
+        </div>
+        <div class="field">
+          <span class="lbl">Chống trùng trên nền tảng</span>
+          <span class="hint">Mỗi video được chỉnh khác nhau một chút (lật, zoom, tốc độ, màu) để không giống hệt nhau.</span>
+          <div class="seg" id="anti"><button data-v="0" class="on">Tắt</button><button data-v="1">Nhẹ</button><button data-v="2">Vừa</button><button data-v="3">Mạnh</button></div>
+          <span class="hint" id="antihint"></span>
+        </div>
+        <p class="warn" id="warn" hidden></p>
+      </section>
+      <div class="slot"></div>
+    </div>
+
+    <!-- ============ SOURCE ============ -->
+    <div class="page" id="pg-source" hidden>
+      <div class="ph"><h1>Tạo Source Video</h1></div>
+      <div class="howto"><b>Cách hoạt động:</b> tạo dự án, chia thành các phân cảnh theo thứ tự (hook → vấn đề → sản phẩm → kêu gọi), mỗi phân cảnh tải lên nhiều clip cùng chủ đề. Hệ thống lấy <b>một clip từ mỗi phân cảnh</b> và ghép đúng thứ tự thành video hoàn chỉnh. Mỗi lần tạo đổi tổ hợp khác nhau để hạn chế trùng lặp.</div>
+      <section class="step">
+        <div class="sh"><div class="num">1</div><h2>Dự án</h2></div>
+        <div class="field"><span class="lbl">Chọn dự án</span>
+          <div class="row" style="flex-wrap:nowrap"><select id="projSel" style="flex:1;min-width:0"></select></div>
+          <div class="row">
+            <button class="btn small" id="projNew">+ Dự án mới</button>
+            <button class="btn small" id="projRename">Đổi tên</button>
+            <button class="btn small danger" id="projDel">Xóa dự án</button>
+          </div>
+          <div class="row" id="projNameRow" hidden><input type="text" id="projName" placeholder="Tên dự án, VD: Dép quai ngang D07" style="flex:1;min-width:180px"><button class="btn small primary" id="projNameOk">Lưu</button><button class="btn small" id="projNameCancel">Hủy</button></div>
+          <div class="confirm" id="projDelRow" hidden>Xóa dự án này và toàn bộ clip trong đó? <button class="btn small danger" id="projDelOk">Xóa</button><button class="btn small" id="projDelCancel">Giữ lại</button></div>
+        </div>
+        <div class="field"><div class="row" style="justify-content:space-between"><span class="lbl">Kho video nguồn (mọi dự án)</span><span class="mono" id="storeTxt"></span></div><div class="meter"><i id="storeBar"></i></div></div>
+      </section>
+      <section class="step">
+        <div class="sh"><div class="num">2</div><h2>Phân cảnh</h2></div>
+        <p class="hint">Mẹo: nên dùng <b>nhiều clip ngắn 5–15 giây</b>. Clip dài chỉ được lấy một đoạn ngắn mỗi video.</p>
+        <div class="scenes" id="scenes"></div>
+        <div class="row"><button class="btn small" id="sceneAdd">+ Thêm phân cảnh</button></div>
+        <input type="file" id="clipFiles" accept="video/*" multiple hidden>
+      </section>
+      <section class="step">
+        <div class="sh"><div class="num">3</div><h2>Cài đặt video</h2></div>
+        <div class="grid g3">
+          <div class="field"><span class="lbl">Số lượng video đầu ra</span><input type="number" id="scount" min="1" max="50" value="3"><span class="hint">Số video mới cần tạo (1–50)</span></div>
+          <div class="field"><span class="lbl">Thời lượng mong muốn (giây)</span><input type="number" id="sdur" min="10" max="60" value="20"><span class="hint" id="sdurHint">10–60 giây, chia đều cho các phân cảnh</span></div>
+          <div class="field"><span class="lbl">Thứ tự phân cảnh</span>
+            <select id="sorder"><option value="seq">Theo thứ tự: PC1 → PC2 → PC3</option><option value="first">Giữ cảnh đầu, xáo phần còn lại</option><option value="rand">Ngẫu nhiên hoàn toàn</option></select>
+            <span class="hint" id="sorderHint">Ghép đúng thứ tự bạn đã xếp</span></div>
+        </div>
+        <p class="warn" id="swarn" hidden></p>
+      </section>
+      <div class="slot"></div>
+    </div>
+
+    <!-- ============ LIBRARY ============ -->
+    <div class="page" id="pg-library" hidden>
+      <div class="ph"><h1>Video đã tạo</h1><p>Các lần tạo gần đây, lưu trên trình duyệt này.</p></div>
+      <div class="notice"><b>Video tự xóa sau 7 ngày</b> kể từ lúc tạo để giải phóng bộ nhớ máy. Hãy tải về ngay sau khi tạo xong. Xóa dữ liệu trình duyệt cũng sẽ xóa các video này.</div>
+      <div id="groups" style="display:grid;gap:14px"></div>
+    </div>
+
+    <!-- ============ AUTOPOST ============ -->
+    <div class="page" id="pg-autopost" hidden>
+      <div class="ph"><h1>Lịch đăng video</h1><p>Chọn nhiều video đã tạo, đặt giờ một lần, nhận lịch đăng kèm caption cho từng video.</p></div>
+      <div class="notice">Bản này lập lịch và viết caption để bạn đăng hoặc hẹn giờ trong TikTok Studio. Muốn tự đăng lên kênh cần máy chủ và ứng dụng TikTok được TikTok duyệt. TikTok giới hạn khoảng 15 bài mỗi ngày mỗi kênh.</div>
+      <section class="step">
+        <div class="sh"><div class="num">1</div><h2>Chọn video</h2></div>
+        <div class="row" style="justify-content:space-between"><span class="hint" id="pickInfo"></span><button class="btn small" id="pickAll">Chọn tất cả</button></div>
+        <div class="pick" id="pick"></div>
+      </section>
+      <section class="step">
+        <div class="sh"><div class="num">2</div><h2>Khung giờ đăng</h2></div>
+        <div class="grid g4">
+          <div class="field"><span class="lbl">Ngày bắt đầu</span><input type="date" id="apDate"></div>
+          <div class="field"><span class="lbl">Số bài mỗi ngày</span><input type="number" id="apPer" min="1" max="15" value="3"></div>
+          <div class="field"><span class="lbl">Từ giờ</span><input type="number" id="apFrom" min="0" max="23" value="11"></div>
+          <div class="field"><span class="lbl">Đến giờ</span><input type="number" id="apTo" min="0" max="23" value="21"></div>
+        </div>
+        <div class="field"><span class="lbl">Thông tin để viết caption</span><textarea id="apDesc" style="min-height:80px" placeholder="Tên sản phẩm, điểm nổi bật, khuyến mãi… Để trống sẽ dùng mô tả sản phẩm ở trang Remix."></textarea></div>
+        <div class="row"><button class="btn primary" id="apMake">Lập lịch</button><button class="btn" id="apCap" disabled>Viết caption bằng AI</button><button class="btn" id="apCsv" disabled>Tải lịch (.csv)</button><span class="hint" id="apNote"></span></div>
+      </section>
+      <div class="tablewrap" id="apTableWrap" hidden><table><thead><tr><th>#</th><th>Ngày giờ</th><th>Video</th><th>Caption</th><th></th></tr></thead><tbody id="apBody"></tbody></table></div>
+    </div>
+
+    <!-- ============ LOG ============ -->
+    <div class="page" id="pg-log" hidden>
+      <div class="ph"><h1>Nhật ký tạo video</h1><p>Mỗi lần tạo video đều ghi ở đây để bạn đối soát số video.</p></div>
+      <div class="tiles">
+        <div class="tile"><b id="lgRuns">0</b><span>Lần tạo</span></div>
+        <div class="tile"><b id="lgOk">0</b><span>Video đã tạo</span></div>
+        <div class="tile"><b id="lgFail">0</b><span>Video không hoàn thành</span></div>
+        <div class="tile"><b id="lgKept">0</b><span>Video đang lưu</span></div>
+      </div>
+      <div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Hoạt động</th><th>Số video</th><th>Kịch bản</th><th>Kết quả</th></tr></thead><tbody id="lgBody"></tbody></table></div>
+    </div>
+
+    <!-- ============ ACCOUNT ============ -->
+    <div class="page" id="pg-account" hidden>
+      <div class="ph"><h1>Tài khoản</h1></div>
+      <section class="step">
+        <div class="row"><img class="avatar" id="acAv" alt=""><div><b id="acName" style="font-size:16px">Khách</b><p class="hint">Video và dự án chỉ lưu trên trình duyệt này, không tải lên máy chủ nào.</p></div></div>
+      </section>
+      <section class="step">
+        <h2>Bộ nhớ</h2>
+        <div class="field"><div class="row" style="justify-content:space-between"><span class="lbl">Đã dùng trên trình duyệt</span><span class="mono" id="acStore">—</span></div><div class="meter"><i id="acBar"></i></div></div>
+        <div class="row"><button class="btn small danger" id="acClearOut">Xóa tất cả video đã tạo</button><button class="btn small danger" id="acClearAll">Xóa toàn bộ dữ liệu</button></div>
+        <div class="confirm" id="acConfirm" hidden><span id="acConfirmTxt"></span><button class="btn small danger" id="acYes">Xóa</button><button class="btn small" id="acNo">Giữ lại</button></div>
+      </section>
+      <section class="step">
+        <h2>Giao diện</h2>
+        <div class="field" style="max-width:320px"><span class="lbl">Chế độ màu</span>
+          <select id="themeSel"><option value="">Theo hệ thống</option><option value="light">Sáng</option><option value="dark">Tối</option></select></div>
+      </section>
+    </div>
+
+    <!-- ============ shared blocks (moved into the active page's .slot) ============ -->
+    <div id="shared" hidden>
+      <section class="step" id="blkScript">
+        <div class="sh"><div class="num" data-n="script">3</div><h2>Kịch bản AI và phụ đề</h2></div>
+        <div class="howto"><b>Cách hoạt động:</b> nhập mô tả sản phẩm, AI viết cho mỗi video một kịch bản khác nhau, kịch bản chạy thành phụ đề trên video. <b>Để trống nếu chỉ muốn cắt ghép.</b></div>
+        <div class="field"><span class="lbl">Mô tả sản phẩm (càng chi tiết càng tốt)</span>
+          <textarea id="desc" placeholder="VD: Dép nữ quai ngang bản to D07, chất liệu da tổng hợp, đế chống trơn, 2 màu đen và kem, giá 199.000 đồng, mua 2 tặng 1, hợp đi làm đi chơi…"></textarea>
+          <span class="hint">Ghi đủ tên, đặc điểm, giá, khuyến mãi. AI chỉ dùng thông tin bạn ghi, không tự bịa giá.</span></div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Phong cách kịch bản</span>
+            <select id="style">
+              <option value="std">Tiêu chuẩn: giọng quảng cáo chuyên nghiệp</option>
+              <option value="fun">Vui nhộn: drama, xưng anh/chồng, vợ/em</option>
+              <option value="viral">Viral: cảm thán mạnh, bắt trend</option>
+              <option value="rural">Dân dã: giọng miền quê chân chất, mộc mạc</option>
+            </select></div>
+          <div class="field"><span class="lbl">Cấu trúc kịch bản</span>
+            <select id="struct">
+              <option value="scene" selected>Khớp từng cảnh: AI xem khung hình, mỗi cảnh một câu</option>
+              <option value="aida">Hook → Vấn đề → Sản phẩm → Kêu gọi</option>
+              <option value="proof">Kết quả → Cách dùng → Lý do tin → Kêu gọi</option>
+              <option value="offer">Khuyến mãi → Điểm nổi bật → Khan hiếm → Kêu gọi</option>
+              <option value="free">Tự do: AI tự chọn</option>
+              <option value="custom">Tự nhập cấu trúc…</option>
+            </select>
+            <input type="text" id="structCustom" placeholder="VD: Hỏi khách 1 câu → Demo sản phẩm → Trước/sau → Giá → Chốt đơn" hidden>
+            <span class="hint" id="structHint">Lời đọc canh theo từng cảnh: cảnh nào đang chiếu thì phụ đề nói đúng thứ đó.</span></div>
+        </div>
+        <div class="field"><span class="lbl">Yêu cầu thêm cho AI (tùy chọn)</span>
+          <textarea id="extra" style="min-height:70px" placeholder="VD: xưng em, gọi khách là chị; nhắc freeship toàn quốc; câu mở đầu dạng câu hỏi; không dùng từ &quot;rẻ nhất&quot;"></textarea>
+          <span class="hint">AI ưu tiên làm theo các yêu cầu này. Muốn sửa kịch bản thì ghi yêu cầu ở đây rồi viết lại.</span></div>
+        <div class="row"><button class="btn small" id="tryScript">Viết thử 1 kịch bản</button><span class="hint" id="aiState"></span></div>
+        <div class="script" id="scriptPreview" hidden></div>
+        <div class="field">
+          <span class="lbl">Cách dựng video</span>
+          <div class="seg two" id="pmode"><button data-v="auto" class="on">Tự ghép cảnh</button><button data-v="script">Theo kịch bản viết sẵn</button></div>
+          <span class="hint" id="pmodeHint">Máy tự ghép cảnh, AI viết kịch bản theo cấu trúc bạn chọn ở trên.</span>
+        </div>
+        <div class="field">
+          <span class="lbl">Giọng đọc</span>
+          <div class="seg three" id="vmode"><button data-v="none" class="on">Không giọng đọc</button><button data-v="ai">Giọng AI (Google)</button><button data-v="upload">Tải giọng đọc lên</button></div>
+          <div id="voicePanel" style="display:grid;gap:12px" hidden>
+            <div class="grid g2" id="aiVoiceBox" hidden>
+              <div class="field"><span class="lbl">Giọng đọc</span>
+                <div class="row" style="flex-wrap:nowrap"><select id="ttsVoice" style="flex:1;min-width:0"></select><button class="btn small" id="ttsTry">▶ Nghe thử</button></div>
+                <span class="hint" id="ttsNote">Bấm Nghe thử để nghe một câu mẫu của giọng đang chọn.</span></div>
+              <div class="field"><span class="lbl">Tốc độ đọc: <b id="ttsRateO">1.0×</b></span><input type="range" id="ttsRate" min="0.7" max="1.3" step="0.05" value="1">
+                <span class="hint">0.7 = chậm rãi · 1.0 = bình thường · 1.3 = nhanh</span></div>
+            </div>
+            <div class="howto" id="vHow"></div>
+            <div class="row"><button class="btn small" id="vWrite">AI viết kịch bản</button><button class="btn small" id="vPreview" hidden>Xem trước cảnh AI chọn cho Video 1</button><span class="hint" id="vNote"></span></div>
+            <div class="script" id="matchPreview" hidden></div>
+            <div class="vrows" id="vRows"></div>
+            <div class="slider" style="max-width:420px"><span class="hint">Âm lượng giọng đọc: <b id="vvO">100%</b> · nên giảm tiếng gốc để giọng rõ hơn</span><input type="range" id="vv" min="0" max="150" value="100"></div>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="subs" checked><span><b>Phụ đề chạy theo lời kịch bản</b><br><span class="hint">Chữ hiện trên video khớp với câu đang đọc.</span></span></label>
+        <div class="subwrap" id="subOpts">
+          <div class="subctl">
+            <div class="field"><span class="lbl">Mẫu có sẵn</span><div class="presetrow" id="subPresets"></div></div>
+            <div class="grid g2">
+              <div class="field"><span class="lbl">Font chữ</span><select id="sFont"></select></div>
+              <div class="field"><span class="lbl">Độ đậm</span><select id="sWeight"><option value="400">Thường</option><option value="700">Đậm</option><option value="900">Rất đậm</option></select></div>
+            </div>
+            <div class="field"><span class="lbl">Cỡ chữ: <b id="sSizeO"></b></span><input type="range" id="sSize" min="36" max="110" step="1"></div>
+            <div class="field"><span class="lbl">Kiểu chữ</span>
+              <div class="seg" id="sEffect"><button data-v="stroke">Viền</button><button data-v="box">Nền hộp</button><button data-v="shadow">Bóng đổ</button><button data-v="both">Viền + bóng</button></div></div>
+            <div class="grid g3">
+              <div class="field"><span class="lbl">Màu chữ</span><input type="color" id="sColor"></div>
+              <div class="field"><span class="lbl" id="sStrokeL">Màu viền</span><input type="color" id="sStroke"></div>
+              <div class="field" id="sStrokeWF"><span class="lbl">Độ dày viền: <b id="sStrokeWO"></b></span><input type="range" id="sStrokeW" min="0" max="24" step="1"></div>
+            </div>
+            <div class="swatches" id="sSw" aria-label="Màu chữ nhanh"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="sKara"><span><b>Chữ đang đọc đổi màu</b></span></label>
+              <input type="color" id="sHl" aria-label="Màu chữ đang đọc">
+              <label class="check"><input type="checkbox" id="sUpper"><span><b>IN HOA</b></span></label>
+            </div>
+            <div class="field"><span class="lbl">Vị trí: <b id="sYO"></b></span>
+              <div class="row" id="sYBtns"><button class="btn small" data-y="20">Phía trên</button><button class="btn small" data-y="50">Giữa</button><button class="btn small" data-y="72">Phía dưới (trên giỏ hàng)</button></div>
+              <input type="range" id="sY" min="8" max="92" step="1"></div>
+          </div>
+          <div class="subprev">
+            <span class="lbl">Xem trước</span>
+            <canvas id="sPrev" width="540" height="960"></canvas>
+            <input type="text" id="sText" value="Sàn nhà cũ? Dán đè lên là xong, bấm giỏ hàng nhé!" aria-label="Câu xem trước">
+            <span class="hint">Sửa câu ở trên để thử. Nền là khung hình từ video của bạn.</span>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Nhạc nền (tùy chọn)</span>
+            <div class="row"><label class="btn small" for="mfile">Chọn file nhạc</label><input type="file" id="mfile" accept="audio/*" hidden><span class="hint" id="mname">Chưa có nhạc</span></div>
+            <div class="slider"><span class="hint">Âm lượng nhạc: <b id="vmO">40%</b></span><input type="range" id="vm" min="0" max="100" value="40"></div></div>
+          <div class="field"><span class="lbl">Tiếng gốc trong video</span>
+            <div class="slider"><span class="hint">Âm lượng tiếng gốc: <b id="voO">100%</b></span><input type="range" id="vo" min="0" max="100" value="100"></div>
+            <span class="hint">Chỉ dùng nhạc bạn có quyền sử dụng để tránh bị tắt tiếng hoặc gỡ video.</span></div>
+        </div>
+        <div class="notice">Giọng đọc AI tự động (Azure, Google, Vbee) cần máy chủ có API key. Hiện tại bạn tạo giọng bằng CapCut rồi tải lên ở phần Giọng đọc phía trên.</div>
+      </section>
+
+      <section class="step" id="blkProcess">
+        <div class="sh"><div class="num" data-n="process">4</div><h2>Xử lý</h2></div>
+        <div class="row">
+          <button class="btn primary" id="go">Bắt đầu tạo video</button>
+          <button class="btn" id="stop" hidden>Dừng</button>
+          <button class="btn" id="reset">+ Làm lại từ đầu</button>
+          <span class="hint" id="fmt"></span>
+        </div>
+        <div class="stagewrap">
+          <canvas id="cv" width="1080" height="1920"></canvas>
+          <div style="display:grid;gap:10px;min-width:0">
+            <div class="status" id="status">Sẵn sàng. Bấm "Bắt đầu tạo video".</div>
+            <div class="prog"><i id="bar"></i></div>
+            <p class="hint">Video được dựng theo thời gian thực ngay trên máy bạn: 3 video × 15 giây mất khoảng 1 phút. Giữ tab này mở và đang hiển thị trong lúc tạo.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="step" id="blkResults">
+        <div class="sh"><div class="num" data-n="results">5</div><h2>Kết quả</h2></div>
+        <p class="hint" id="sum">Chưa có video nào. Video tạo xong sẽ hiện ở đây.</p>
+        <div class="notice"><b>Nhớ tải video về máy.</b> Video lưu 7 ngày trên trình duyệt này, xem lại ở mục <a href="#library">Video đã tạo</a>.</div>
+        <div class="editor" id="editor" hidden></div>
+        <div class="results" id="results"></div>
+        <div class="row"><button class="btn primary" id="zipAll" disabled>Tải tất cả video (.zip)</button><span class="hint" id="zipNote"></span></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="login" id="login" hidden>
+  <form id="loginForm">
+    <div class="brand"><div class="mark">RX</div><div><b>REMIX STUDIO</b><small>Nhập mật khẩu để dùng</small></div></div>
+    <input type="password" id="loginPass" placeholder="Mật khẩu" autocomplete="current-password">
+    <span class="warn" id="loginErr"></span>
+    <button class="btn primary" type="submit">Vào</button>
+  </form>
+</div>
+<audio id="music" loop preload="auto" hidden></audio>
+<audio id="voice" preload="auto" hidden></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const W = 1080, H = 1920, MAXSRC = 30, KEEP_DAYS = 7, DAY = 864e5;
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const music = $('#music');
+const rand = (a, b) => a + Math.random() * (b - a);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const fmtS = s => s.toFixed(1).replace('.', ',') + ' giây';
+const fmtMB = b => (b / 1048576).toFixed(1).replace('.', ',') + ' MB';
+const fmtTime = t => { const d = new Date(t); const p = n => String(n).padStart(2, '0'); return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const shuffle = a => { for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
+const STYLE_NAME = { std: 'Tiêu chuẩn', fun: 'Vui nhộn', viral: 'Viral', rural: 'Dân dã' };
+
+const S = { route: 'remix', remixSources: [], projects: [], projId: null, outputs: [], runs: [], lastRunId: null, busy: false, abort: false };
+
+/* ================= local storage (IndexedDB, per browser) ================= */
+const DB = (() => {
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise(res => {
+      try {
+        const r = indexedDB.open('remix-studio', 1);
+        r.onupgradeneeded = () => { for (const n of ['projects', 'clips', 'outputs', 'runs']) r.result.createObjectStore(n, { keyPath: 'id' }); };
+        r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null);
+      } catch (e) { res(null); }
+    });
+    return dbp;
+  }
+  async function tx(store, mode, fn) {
+    const d = await open(); if (!d) return null;
+    return new Promise(res => {
+      try {
+        const t = d.transaction(store, mode), req = fn(t.objectStore(store));
+        t.oncomplete = () => res(req && 'result' in req ? req.result : null); t.onerror = () => res(null); t.onabort = () => res(null);
+      } catch (e) { res(null); }
+    });
+  }
+  return {
+    put: (s, v) => tx(s, 'readwrite', o => o.put(v)), del: (s, k) => tx(s, 'readwrite', o => o.delete(k)),
+    all: async s => (await tx(s, 'readonly', o => o.getAll())) || [], get: (s, k) => tx(s, 'readonly', o => o.get(k)),
+    clear: s => tx(s, 'readwrite', o => o.clear())
+  };
+})();
+
+/* ================= capabilities ================= */
+/* server API: Claude (/api/ai) and Google TTS (/api/tts) live behind the app's own server */
+const passKey = () => { try { return localStorage.getItem('rs-pass') || ''; } catch (e) { return ''; } };
+async function api(path, body, asBuffer) {
+  const r = await fetch('/api/' + path, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'content-type': 'application/json', 'x-app-password': passKey() },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 401) { showLogin(); throw { code: 'not_granted', message: 'Cần mật khẩu' }; }
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error; } catch (e) {} throw { code: r.status === 429 ? 'rate_limited' : 'server_error', message: m || 'HTTP ' + r.status }; }
+  return asBuffer ? r.arrayBuffer() : r.json();
+}
+const blobToB64 = b => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.readAsDataURL(b); });
+function makeSample() {
+  const call = async (input, opts = {}) => {
+    const imgs = opts.images ? (opts.images instanceof Blob ? [opts.images] : [...opts.images]) : [];
+    const prompt = typeof input === 'string' ? input : input.map(m => m.content).join('\n\n');
+    const { text, truncated } = await api('ai', { prompt, images: await Promise.all(imgs.map(blobToB64)), tier: opts.modelTier || 'default' });
+    return { text, truncated };
+  };
+  call.json = async (input, opts) => {
+    const { text } = await call(input, opts), m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw { code: 'bad_json', message: 'AI trả lời sai định dạng' };
+    return JSON.parse(m[0]);
+  };
+  call.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 12 } });
+  return call;
+}
+const downloads = { save: async ({ filename, data }) => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data])); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  return { status: 'saved' };
+} };
+let sample = null, health = { ai: false, tts: false };
+function showLogin(msg) { $('#login').hidden = false; $('#loginErr').textContent = msg || ''; setTimeout(() => $('#loginPass').focus(), 30); }
+async function checkHealth() {
+  try { health = await (await fetch('/api/health', { headers: { 'x-app-password': passKey() } })).json(); } catch (e) { health = { ai: false, tts: false }; }
+  if (health.needPassword && !health.authed) { showLogin(passKey() ? 'Mật khẩu không đúng.' : ''); return false; }
+  $('#login').hidden = true;
+  sample = health.ai ? makeSample() : null;
+  updateAiState(); loadVoices(); return true;
+}
+function updateAiState() {
+  $('#aiState').textContent = sample ? 'AI sẵn sàng.' : 'Máy chủ chưa bật AI (thiếu ANTHROPIC_API_KEY). Bạn vẫn cắt ghép được bình thường.';
+  $('#tryScript').disabled = !sample;
+}
+
+/* ================= theme ================= */
+function applyTheme(v) {
+  if (v) document.documentElement.setAttribute('data-theme', v); else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem('rs-theme', v); } catch (e) {}
+  $('#themeSel').value = v;
+  const dark = v ? v === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  $('#themeBtn').textContent = dark ? '☀ Giao diện sáng' : '☾ Giao diện tối';
+}
+$('#themeBtn').onclick = () => { const dark = getComputedStyle(document.documentElement).colorScheme.includes('dark'); applyTheme(dark ? 'light' : 'dark'); };
+$('#themeSel').onchange = e => applyTheme(e.target.value);
+try { applyTheme(localStorage.getItem('rs-theme') || ''); } catch (e) { applyTheme(''); }
+
+/* ================= routing ================= */
+const ROUTES = ['remix', 'source', 'library', 'autopost', 'log', 'account'];
+const NUMS = { remix: { script: 3, process: 4, results: 5 }, source: { script: 4, process: 5, results: 6 } };
+function route() {
+  const r = ROUTES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'remix';
+  if (S.busy && (r === 'remix' || r === 'source') && r !== S.route) { location.hash = S.route; return; }
+  for (const x of ROUTES) $('#pg-' + x).hidden = x !== r;
+  $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === r));
+  if (r === 'remix' || r === 'source') {
+    if (S.route !== r || !$('#pg-' + r + ' .slot').children.length) {
+      const slot = $('#pg-' + r + ' .slot');
+      for (const id of ['blkScript', 'blkProcess', 'blkResults']) slot.appendChild($('#' + id));
+      $$('[data-n]').forEach(n => n.textContent = NUMS[r][n.dataset.n]);
+      $('#reset').textContent = r === 'remix' ? '+ Remix video mới' : '+ Làm lại từ đầu';
+    }
+    S.route = r; renderRunResults(); renderVoiceRows();
+  }
+  if (r === 'library') renderLibrary();
+  if (r === 'autopost') renderPick();
+  if (r === 'log') renderLog();
+  if (r === 'account') renderAccount();
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', route);
+
+/* ================= sources ================= */
+function makeSynth(name, dur, hue, label) {
+  const c = document.createElement('canvas'); c.width = 540; c.height = 960;
+  const g = c.getContext('2d'), shotLen = dur / 4;
+  const src = { id: 'ex-' + uid(), name, kind: 'synth', dur, w: 1080, h: 1920, size: 0, example: true, canvas: c };
+  src.shots = [0, 1, 2, 3].map(i => [i * shotLen, Math.min(dur, (i + 1) * shotLen)]);
+  src.draw = t => {
+    const k = Math.min(3, Math.floor(t / shotLen)), h = hue + k * 38;
+    const gr = g.createLinearGradient(0, 0, 540, 960);
+    gr.addColorStop(0, `hsl(${h},55%,${30 + k * 6}%)`); gr.addColorStop(1, `hsl(${h + 40},60%,14%)`);
+    g.fillStyle = gr; g.fillRect(0, 0, 540, 960);
+    g.save(); g.translate(270 + Math.sin(t * .9) * 40, 470 + Math.cos(t * .7) * 30); g.rotate(Math.sin(t * .5) * .15 + k * .3);
+    g.fillStyle = `hsl(${h + 180},70%,70%)`; g.beginPath(); g.roundRect ? g.roundRect(-120, -150, 240, 300, 28) : g.rect(-120, -150, 240, 300); g.fill();
+    g.fillStyle = '#ffffffcc'; g.fillRect(-80, -40, 160, 18); g.fillRect(-80, 0, 110, 18); g.restore();
+    g.fillStyle = '#fff'; g.textAlign = 'center';
+    g.font = '800 40px "Be Vietnam Pro",sans-serif'; g.fillText(label, 270, 130);
+    g.font = '500 24px "JetBrains Mono",monospace'; g.fillText(`${name} · cảnh ${k + 1}`, 270, 175);
+    g.fillText(t.toFixed(1) + 's', 270, 900);
+  };
+  src.draw(shotLen / 2); src.thumb = c.toDataURL('image/jpeg', .7);
+  return src;
+}
+const once = (el, ev, ms = 8000) => new Promise(r => { const t = setTimeout(r, ms); el.addEventListener(ev, () => { clearTimeout(t); r(); }, { once: true }); });
+function seekTo(v, t) {
+  return new Promise(r => {
+    const to = setTimeout(r, 3000);
+    v.addEventListener('seeked', () => { clearTimeout(to); r(); }, { once: true });
+    v.currentTime = Math.max(0, Math.min(t, (v.duration || t) - 0.04));
+  });
+}
+async function ensureEl(s) {
+  if (s.kind !== 'video' || s.el) return s;
+  const el = document.createElement('video'); el.preload = 'auto'; el.playsInline = true;
+  el.src = URL.createObjectURL(s.blob); await once(el, 'loadeddata'); s.el = el; return s;
+}
+// read a File/Blob into a playable source with meta + thumbnail
+async function loadSource(blob, name) {
+  const s = { id: uid(), name, kind: 'video', blob, size: blob.size };
+  await ensureEl(s);
+  if (!s.el.videoWidth) return null;
+  s.dur = s.el.duration; s.w = s.el.videoWidth; s.h = s.el.videoHeight;
+  await seekTo(s.el, Math.min(1, s.dur / 3));
+  const tc = document.createElement('canvas'); tc.width = 80; tc.height = 110;
+  coverDraw(tc.getContext('2d'), s.el, s.w, s.h, 80, 110); s.thumb = tc.toDataURL('image/jpeg', .7);
+  return s;
+}
+function quality(s) {
+  if (s.example) return ['Ví dụ', 'ex'];
+  const m = Math.min(s.w, s.h);
+  return m >= 1080 ? ['Full HD', ''] : m >= 720 ? ['HD', 'hd'] : ['SD', 'sd'];
+}
+
+/* ================= REMIX page ================= */
+function loadRemixExamples() { S.remixSources = [makeSynth('mau_01', 18, 200, 'VÍ DỤ'), makeSynth('mau_02', 20, 330, 'VÍ DỤ'), makeSynth('mau_03', 17, 30, 'VÍ DỤ')]; renderList(); }
+async function addRemixFiles(files) {
+  const vids = [...files].filter(f => f.type.startsWith('video'));
+  if (!vids.length || S.busy) return;
+  if (S.remixSources.some(s => s.example)) S.remixSources = [];
+  for (const f of vids) {
+    if (S.remixSources.length >= MAXSRC) break;
+    const s = await loadSource(f, f.name);
+    if (!s) { setStatus(`Không đọc được "${f.name}". Hãy thử file MP4 (H.264).`, true); continue; }
+    S.remixSources.push(s); renderList();
+  }
+}
+const drop = $('#drop');
+drop.addEventListener('click', () => $('#vfiles').click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#vfiles').click(); } });
+$('#vfiles').addEventListener('change', e => { addRemixFiles(e.target.files); e.target.value = ''; });
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); addRemixFiles(e.dataTransfer.files); });
+function renderList() {
+  const L = $('#list'); L.innerHTML = '';
+  for (const s of S.remixSources) {
+    const [q, qc] = quality(s);
+    const d = document.createElement('div'); d.className = 'item';
+    d.innerHTML = `<img alt=""><div class="nm"></div><span class="mono"></span><span class="q ${qc}">${q}</span><button class="x" aria-label="Xóa video">✕</button>`;
+    d.querySelector('img').src = s.thumb;
+    const nm = d.querySelector('.nm'); nm.textContent = s.name;
+    const sm = document.createElement('small'); sm.textContent = `${fmtS(s.dur)} · ${s.w}×${s.h}`; nm.appendChild(sm);
+    d.querySelector('.mono').textContent = s.example ? 'mẫu' : fmtMB(s.size);
+    d.querySelector('.x').onclick = () => { if (S.busy) return; S.remixSources = S.remixSources.filter(x => x !== s); if (!S.remixSources.length) loadRemixExamples(); renderList(); };
+    L.appendChild(d);
+  }
+  const total = S.remixSources.reduce((a, s) => a + s.dur, 0), bytes = S.remixSources.reduce((a, s) => a + s.size, 0);
+  $('#cnt').textContent = `${S.remixSources.length}/${MAXSRC} video`;
+  $('#tot').textContent = `· ${Math.round(total)} giây phim gốc` + (bytes ? ` · ${fmtMB(bytes)}` : '');
+  $('#exnote').hidden = !S.remixSources.some(s => s.example);
+  checkWarn();
+}
+let anti = 0;
+const ANTI_TXT = ['Giữ nguyên hình gốc, không chỉnh gì.',
+  'Lật ngẫu nhiên, zoom 2–6%, tốc độ ±5%, màu chỉnh rất nhẹ.',
+  'Zoom 5–12%, tốc độ ±10%, lệch màu và xoay nhẹ, thêm hạt nhiễu mỏng.',
+  'Zoom 10–20%, tốc độ ±15%, đổi tông màu rõ, xoay, hạt nhiễu và viền mỏng.'];
+$$('#anti button').forEach(b => b.onclick = () => { anti = +b.dataset.v; $$('#anti button').forEach(x => x.classList.toggle('on', x === b)); $('#antihint').textContent = ANTI_TXT[anti]; });
+$('#antihint').textContent = ANTI_TXT[0];
+const clampInt = (el, a, b, d) => Math.max(a, Math.min(b, parseInt(el.value) || d));
+function checkWarn() {
+  const total = S.remixSources.reduce((a, s) => a + s.dur, 0), n = clampInt($('#count'), 1, 50, 1), D = clampInt($('#dur'), 10, 60, 15), need = n * D;
+  const w = $('#warn');
+  if (S.remixSources.length && total < need) {
+    const avg = total / S.remixSources.length, more = Math.ceil((need - total) / Math.max(avg, 1)), fit = Math.max(1, Math.floor(total / D));
+    w.textContent = `Phim gốc ${Math.round(total)} giây nhưng cần ${need} giây, các video sẽ trùng nhau nhiều. Nên tải thêm khoảng ${more} video nữa, hoặc giảm còn ${fit} video.`;
+    w.hidden = false;
+  } else w.hidden = true;
+}
+['#count', '#dur'].forEach(s => $(s).addEventListener('input', checkWarn));
+$('#mode').addEventListener('change', () => {
+  $('#modehint').textContent = $('#mode').value === 'std' ? 'Chế độ thông minh dùng Claude để nhận diện khung hình.' :
+    sample ? 'Claude sẽ xem 1 khung hình mỗi cảnh để nhận diện mặt người và sản phẩm.' : 'Chế độ này cần AI, hiện chưa khả dụng nên sẽ chạy như Tiêu chuẩn.';
+});
+
+/* ================= SOURCE page (projects with ordered scenes) ================= */
+function exampleProject() {
+  const mk = (n, d, h) => makeSynth(n, d, h, 'VÍ DỤ');
+  return { id: 'example', name: 'Ví dụ: Dép quai ngang D07', example: true, scenes: [
+    { id: uid(), name: 'Hook: đập hộp', clips: [mk('hook_a', 8, 200), mk('hook_b', 9, 220)] },
+    { id: uid(), name: 'Sản phẩm: cận cảnh', clips: [mk('sp_a', 10, 330), mk('sp_b', 12, 300), mk('sp_c', 9, 350)] },
+    { id: uid(), name: 'Kêu gọi: giá và ưu đãi', clips: [mk('cta_a', 7, 30), mk('cta_b', 8, 50)] }
+  ] };
+}
+const curProj = () => S.projects.find(p => p.id === S.projId) || null;
+async function saveProj(p) {
+  if (p.example) return;
+  await DB.put('projects', { id: p.id, name: p.name, created: p.created, scenes: p.scenes.map(sc => ({ id: sc.id, name: sc.name, clipIds: sc.clips.map(c => c.id) })) });
+}
+async function loadProjects() {
+  const recs = await DB.all('projects'), clips = new Map((await DB.all('clips')).map(c => [c.id, c]));
+  S.projects = recs.sort((a, b) => (a.created || 0) - (b.created || 0)).map(r => ({
+    id: r.id, name: r.name, created: r.created,
+    scenes: r.scenes.map(sc => ({ id: sc.id, name: sc.name, clips: sc.clipIds.map(id => clips.get(id)).filter(Boolean).map(c => ({ ...c, kind: 'video', el: null })) }))
+  }));
+  S.projects.unshift(exampleProject());
+  S.projId = S.projects[1]?.id || 'example';
+  renderProjects();
+}
+function renderProjects() {
+  const sel = $('#projSel'); sel.innerHTML = '';
+  for (const p of S.projects) { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); }
+  sel.value = S.projId;
+  const p = curProj();
+  $('#projRename').disabled = $('#projDel').disabled = !p || p.example;
+  renderScenes(); renderStore();
+}
+$('#projSel').onchange = e => { S.projId = e.target.value; renderProjects(); };
+let nameMode = null;
+$('#projNew').onclick = () => { nameMode = 'new'; $('#projName').value = ''; $('#projNameRow').hidden = false; $('#projName').focus(); };
+$('#projRename').onclick = () => { const p = curProj(); if (!p || p.example) return; nameMode = 'rename'; $('#projName').value = p.name; $('#projNameRow').hidden = false; $('#projName').focus(); };
+$('#projNameCancel').onclick = () => { $('#projNameRow').hidden = true; };
+$('#projName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#projNameOk').click(); });
+$('#projNameOk').onclick = async () => {
+  const name = $('#projName').value.trim(); if (!name) { $('#projName').focus(); return; }
+  if (nameMode === 'new') {
+    const p = { id: uid(), name, created: Date.now(), scenes: ['Hook', 'Vấn đề', 'Sản phẩm', 'Kêu gọi'].map(n => ({ id: uid(), name: n, clips: [] })) };
+    S.projects.push(p); S.projId = p.id; await saveProj(p);
+  } else { const p = curProj(); p.name = name; await saveProj(p); }
+  $('#projNameRow').hidden = true; renderProjects();
+};
+$('#projDel').onclick = () => { $('#projDelRow').hidden = false; };
+$('#projDelCancel').onclick = () => { $('#projDelRow').hidden = true; };
+$('#projDelOk').onclick = async () => {
+  const p = curProj(); if (!p || p.example) return;
+  for (const sc of p.scenes) for (const c of sc.clips) await DB.del('clips', c.id);
+  await DB.del('projects', p.id);
+  S.projects = S.projects.filter(x => x !== p); S.projId = 'example';
+  $('#projDelRow').hidden = true; renderProjects();
+};
+let addTarget = null;
+function renderScenes() {
+  const box = $('#scenes'); box.innerHTML = '';
+  const p = curProj();
+  $('#sceneAdd').hidden = !p;
+  if (!p) { box.innerHTML = '<div class="empty">Chọn hoặc tạo một dự án để bắt đầu.</div>'; return; }
+  p.scenes.forEach((sc, i) => {
+    const d = document.createElement('div'); d.className = 'scene';
+    d.innerHTML = `<div class="top"><span class="pc">PC${i + 1}</span><input type="text" aria-label="Tên phân cảnh"><div class="row" style="gap:2px"><button class="x" data-a="up" aria-label="Đưa lên">↑</button><button class="x" data-a="down" aria-label="Đưa xuống">↓</button><button class="x" data-a="del" aria-label="Xóa phân cảnh">✕</button></div></div><div class="clips"></div><span class="hint"></span>`;
+    const inp = d.querySelector('input'); inp.value = sc.name;
+    inp.onchange = () => { sc.name = inp.value.trim() || `Phân cảnh ${i + 1}`; saveProj(p); };
+    d.querySelector('[data-a=up]').onclick = () => { if (i > 0) { [p.scenes[i - 1], p.scenes[i]] = [p.scenes[i], p.scenes[i - 1]]; saveProj(p); renderScenes(); } };
+    d.querySelector('[data-a=down]').onclick = () => { if (i < p.scenes.length - 1) { [p.scenes[i + 1], p.scenes[i]] = [p.scenes[i], p.scenes[i + 1]]; saveProj(p); renderScenes(); } };
+    d.querySelector('[data-a=del]').onclick = async () => { for (const c of sc.clips) if (!c.example) await DB.del('clips', c.id); p.scenes.splice(i, 1); saveProj(p); renderScenes(); renderStore(); };
+    const cl = d.querySelector('.clips');
+    for (const c of sc.clips) {
+      const e = document.createElement('div'); e.className = 'clip';
+      e.innerHTML = `<img alt=""><span></span><button aria-label="Xóa clip">✕</button>`;
+      e.querySelector('img').src = c.thumb; e.querySelector('img').title = c.name;
+      e.querySelector('span').textContent = c.dur.toFixed(1) + 's';
+      e.querySelector('button').onclick = async () => { sc.clips = sc.clips.filter(x => x !== c); if (!c.example) await DB.del('clips', c.id); saveProj(p); renderScenes(); renderStore(); };
+      cl.appendChild(e);
+    }
+    const add = document.createElement('div'); add.className = 'addclip'; add.textContent = '+'; add.tabIndex = 0; add.title = 'Thêm clip (kéo thả được)';
+    add.onclick = () => { addTarget = sc; $('#clipFiles').click(); };
+    add.onkeydown = e => { if (e.key === 'Enter') add.click(); };
+    add.ondragover = e => { e.preventDefault(); add.classList.add('over'); };
+    add.ondragleave = () => add.classList.remove('over');
+    add.ondrop = e => { e.preventDefault(); add.classList.remove('over'); addClips(sc, e.dataTransfer.files); };
+    cl.appendChild(add);
+    d.querySelector('.hint').textContent = sc.clips.length ? `${sc.clips.length} clip · ${Math.round(sc.clips.reduce((a, c) => a + c.dur, 0))} giây` : 'Chưa có clip. Bấm + hoặc kéo thả clip vào đây.';
+    box.appendChild(d);
+  });
+  checkSourceWarn();
+}
+$('#clipFiles').addEventListener('change', e => { if (addTarget) addClips(addTarget, e.target.files); e.target.value = ''; });
+async function addClips(sc, files) {
+  const p = curProj(); if (!p || S.busy) return;
+  for (const f of [...files].filter(f => f.type.startsWith('video'))) {
+    const s = await loadSource(f, f.name);
+    if (!s) { setStatus(`Không đọc được "${f.name}".`, true); continue; }
+    if (!p.example) await DB.put('clips', { id: s.id, name: s.name, blob: f, size: f.size, dur: s.dur, w: s.w, h: s.h, thumb: s.thumb });
+    sc.clips.push(s); renderScenes();
+  }
+  saveProj(p); renderStore();
+}
+$('#sceneAdd').onclick = () => { const p = curProj(); if (!p) return; p.scenes.push({ id: uid(), name: `Phân cảnh ${p.scenes.length + 1}`, clips: [] }); saveProj(p); renderScenes(); };
+function checkSourceWarn() {
+  const p = curProj(), w = $('#swarn'); const D = clampInt($('#sdur'), 10, 60, 20), n = clampInt($('#scount'), 1, 50, 1);
+  if (!p) { w.hidden = true; return; }
+  const filled = p.scenes.filter(s => s.clips.length);
+  $('#sdurHint').textContent = filled.length ? `10–60 giây, mỗi phân cảnh khoảng ${(D / filled.length).toFixed(1).replace('.', ',')} giây` : '10–60 giây, chia đều cho các phân cảnh';
+  const empty = p.scenes.filter(s => !s.clips.length).length;
+  const combos = filled.reduce((a, s) => a * s.clips.length, 1);
+  const msgs = [];
+  if (!filled.length) msgs.push('Dự án chưa có clip nào.');
+  else if (empty) msgs.push(`${empty} phân cảnh chưa có clip sẽ bị bỏ qua.`);
+  if (filled.length && combos < n) msgs.push(`Chỉ có ${combos} tổ hợp clip khác nhau cho ${n} video, một số video sẽ trùng nhiều. Hãy thêm clip vào các phân cảnh.`);
+  w.textContent = msgs.join(' '); w.hidden = !msgs.length;
+}
+['#scount', '#sdur'].forEach(s => $(s).addEventListener('input', checkSourceWarn));
+$('#sorder').onchange = () => { $('#sorderHint').textContent = { seq: 'Ghép đúng thứ tự bạn đã xếp', first: 'Hook luôn mở đầu, các phân cảnh sau đổi chỗ', rand: 'Mỗi video một thứ tự khác' }[$('#sorder').value]; };
+async function renderStore() {
+  let used = 0; for (const p of S.projects) if (!p.example) for (const sc of p.scenes) for (const c of sc.clips) used += c.size || 0;
+  let quota = 0; try { quota = (await navigator.storage?.estimate?.())?.quota || 0; } catch (e) {}
+  $('#storeTxt').textContent = `${fmtMB(used)}` + (quota ? ` / còn ${fmtMB(Math.max(0, quota - used))} trống trên máy` : '');
+  $('#storeBar').style.width = (quota ? Math.min(100, used / quota * 100 * 50) : 0) + '%';
+}
+
+/* ================= scene detection + segments (remix) ================= */
+async function analyze(s, onp) {
+  if (s.shots) return s.shots;
+  await ensureEl(s);
+  const v = s.el, c = document.createElement('canvas'); c.width = 32; c.height = 32;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const step = 0.25, cuts = [0]; let prev = null, last = 0;
+  for (let t = 0; t < s.dur; t += step) {
+    if (S.abort) throw 'abort';
+    await seekTo(v, t); g.drawImage(v, 0, 0, 32, 32);
+    const d = g.getImageData(0, 0, 32, 32).data, l = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) l[i] = d[i * 4] * .3 + d[i * 4 + 1] * .59 + d[i * 4 + 2] * .11;
+    if (prev) { let sum = 0; for (let i = 0; i < 1024; i++) sum += Math.abs(l[i] - prev[i]); if (sum / 1024 > 26 && t - last > 0.8) { cuts.push(t); last = t; } }
+    prev = l; onp?.(t / s.dur);
+  }
+  cuts.push(s.dur);
+  s.shots = cuts.slice(1).map((b, i) => [cuts[i], b]).filter(([a, b]) => b - a > 0.3);
+  return s.shots;
+}
+function sensRange(D) {
+  const v = $('#sens').value;
+  if (v === 'hi') return [2.5, 5]; if (v === 'lo') return [8, 14];
+  return D <= 20 ? [2.5, 5] : D <= 40 ? [4, 8] : [6, 10];
+}
+function segments(s, mn, mx) {
+  const out = [];
+  s.shots.forEach((sh, si) => {
+    const info = s.shotInfo?.[si];
+    let a = sh[0], rem = sh[1] - sh[0];
+    while (rem >= Math.min(1.2, mn * .6)) {
+      let L = rand(mn, mx);
+      if (L >= rem) L = rem; else if (rem - L < mn * .6 && rem <= mx * 1.4) L = rem;
+      out.push({ src: s, start: a, len: L, info, key: s.id + ':' + a.toFixed(2) });
+      a += L; rem -= L;
+    }
+  });
+  return out;
+}
+async function classify(srcs, onStatus) {
+  const lim = await sample.limits();
+  if (!lim.images) throw { code: 'images_unavailable' };
+  const per = Math.max(1, Math.min(8, lim.images.maxCount));
+  const jobs = [];
+  for (const s of srcs) { if (s.kind !== 'video' || s.shotInfo) continue; s.shotInfo = []; for (let i = 0; i < s.shots.length; i++) jobs.push({ s, i }); }
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  for (let k = 0; k < jobs.length; k += per) {
+    if (S.abort) throw 'abort';
+    const batch = jobs.slice(k, k + per), blobs = [];
+    for (const j of batch) { const [a, b] = j.s.shots[j.i]; blobs.push(await grabAt(j.s, (a + b) / 2, c, g)); }
+    onStatus(`Claude đang xem khung hình ${Math.min(k + per, jobs.length)}/${jobs.length}…`);
+    const res = await sample.json(
+      `Bạn nhận ${blobs.length} ảnh, là khung hình từ video bán hàng, đánh số 0 đến ${blobs.length - 1} theo thứ tự gửi.
+Với mỗi ảnh, cho biết:
+- face: true nếu nhìn thấy rõ khuôn mặt người (không tính tay, chân, người quay lưng).
+- box: khung bao quanh sản phẩm chính đang được giới thiệu, dạng [x, y, w, h] theo tỉ lệ 0..1 của chiều rộng/cao ảnh, KHÔNG bao gồm khuôn mặt. null nếu không thấy sản phẩm.
+Chỉ trả về JSON đúng dạng: {"items":[{"i":0,"face":false,"box":[0.1,0.2,0.5,0.4]}]}`,
+      { images: blobs, modelTier: 'default' });
+    for (const it of res?.items || []) {
+      const j = batch[it.i]; if (!j) continue;
+      const bx = Array.isArray(it.box) && it.box.length === 4 && it.box.every(n => typeof n === 'number') ? it.box : null;
+      j.s.shotInfo[j.i] = { face: !!it.face, box: bx };
+    }
+  }
+}
+
+/* ================= planning ================= */
+function variation(level) {
+  const f = { flip: false, zoom: 1, speed: 1, rot: 0, bright: 100, contrast: 100, sat: 100, hue: 0, grain: 0, border: 0 };
+  if (!level) return f;
+  const R = [null, { z: [1.02, 1.06], s: .05, c: 4, h: 0, r: 0, g: 0 }, { z: [1.05, 1.12], s: .1, c: 8, h: 6, r: 1, g: 6 }, { z: [1.1, 1.2], s: .15, c: 12, h: 12, r: 2, g: 10 }][level];
+  f.flip = Math.random() < .5; f.zoom = rand(...R.z); f.speed = 1 + rand(-R.s * .5, R.s);
+  f.bright = 100 + rand(-R.c, R.c) * .5; f.contrast = 100 + rand(-R.c, R.c); f.sat = 100 + rand(-R.c, R.c) * 1.4;
+  f.hue = rand(-R.h, R.h); f.rot = rand(-R.r, R.r); f.grain = R.g; f.border = level === 3 ? 14 : 0;
+  return f;
+}
+// D: one duration for every video, or an array with one duration per video (voice-over lengths)
+function planRemix(srcs, n, Dall) {
+  const Dof = i => Array.isArray(Dall) ? Dall[i] : Dall;
+  const [mn, mx] = sensRange(Dof(0)), m = $('#mode').value;
+  const pool = srcs.flatMap(s => segments(s, mn, mx)).filter(sg => m === 'noface' ? !sg.info?.face : m === 'zoom' ? (!sg.info?.face || sg.info.box) : true);
+  if (!pool.length) throw 'Không còn cảnh nào dùng được (có thể tất cả cảnh đều có mặt người). Hãy đổi chế độ remix.';
+  const used = new Map(), plans = [];
+  for (let i = 0; i < n; i++) {
+    const fx = variation(anti), D = Dof(i);
+    const order = pool.map(sg => ({ sg, k: (used.get(sg.key) || 0) + Math.random() * .9 })).sort((a, b) => a.k - b.k);
+    const clips = []; let t = 0;
+    for (const { sg } of order) {
+      if (t >= D - 0.05) break;
+      const show = Math.min(sg.len / fx.speed, D - t);
+      if (show < 0.6) continue;
+      clips.push({ ...sg, len: show * fx.speed, show, zoomBox: m === 'zoom' });
+      used.set(sg.key, (used.get(sg.key) || 0) + 1); t += show;
+    }
+    while (t < D - 0.05 && clips.length) { const c = clips[clips.length % clips.length]; const show = Math.min(c.show, D - t); clips.push({ ...c, len: show * fx.speed, show }); t += show; }
+    plans.push({ clips: shuffle(clips), fx, D: t });
+  }
+  return overlap(plans);
+}
+function planSource(p, n, Dall) {
+  const scenes = p.scenes.filter(s => s.clips.length);
+  if (!scenes.length) throw 'Dự án chưa có clip nào. Thêm clip vào các phân cảnh trước.';
+  const used = new Map(), combos = new Set(), plans = [], mode = $('#sorder').value;
+  for (let i = 0; i < n; i++) {
+    const per = (Array.isArray(Dall) ? Dall[i] : Dall) / scenes.length;
+    let order = scenes.map((_, k) => k);
+    if (mode === 'first') order = [0, ...shuffle(order.slice(1))]; else if (mode === 'rand') shuffle(order);
+    let clips = [], sig = '';
+    for (let attempt = 0; attempt < 8; attempt++) {
+      clips = []; sig = '';
+      for (const k of order) {
+        const sc = scenes[k];
+        const ranked = sc.clips.map(c => ({ c, u: (used.get(c.id) || 0) + Math.random() * .9 })).sort((a, b) => a.u - b.u);
+        let need = per, j = 0;
+        while (need > 0.4 && j < ranked.length) {
+          const c = ranked[j++].c, len = Math.min(need, c.dur), start = rand(0, Math.max(0, c.dur - len));
+          clips.push({ src: c, start, len, show: len, sceneName: `PC${k + 1}: ${sc.name}`, scene: sc, key: c.id });
+          sig += c.id + '|'; need -= len;
+        }
+      }
+      if (!combos.has(sig)) break;
+    }
+    combos.add(sig); clips.forEach(c => used.set(c.src.id, (used.get(c.src.id) || 0) + 1));
+    plans.push({ clips, fx: variation(0), D: clips.reduce((a, c) => a + c.show, 0) });
+  }
+  return overlap(plans);
+}
+// share of each video's source footage that also appears in another video
+function overlap(plans) {
+  plans.forEach((p, i) => {
+    let ov = 0, tot = 0;
+    for (const c of p.clips) {
+      const a = c.start, b = c.start + c.len; tot += c.len;
+      const hits = [];
+      plans.forEach((q, j) => { if (j !== i) for (const d of q.clips) if (d.src === c.src) { const x = Math.max(a, d.start), y = Math.min(b, d.start + d.len); if (y > x) hits.push([x, y]); } });
+      hits.sort((u, v) => u[0] - v[0]); let end = -1;
+      for (const [x, y] of hits) { if (y <= end) continue; ov += y - Math.max(x, end); end = y; }
+    }
+    p.overlap = plans.length > 1 && tot ? Math.round(ov / tot * 100) : 0;
+  });
+  return plans;
+}
+
+/* ================= AI scripts ================= */
+const STYLE = {
+  std: 'giọng quảng cáo chuyên nghiệp, rõ ràng, đáng tin',
+  fun: 'vui nhộn, có chút drama đời thường, xưng hô vợ chồng (anh/chồng, em/vợ) tự nhiên',
+  viral: 'năng lượng cao, nhiều câu cảm thán kiểu "Trời ơi", "Đậu xanh", bắt trend mạng xã hội',
+  rural: 'giọng miền quê chân chất, mộc mạc, gần gũi, xưng "tui", "bà con"'
+};
+const STRUCT = {
+  aida: 'Hook (câu móc) → Vấn đề khách hàng gặp → Giới thiệu sản phẩm và lợi ích → Kêu gọi hành động',
+  proof: 'Kết quả bất ngờ → Cách dùng hoặc quy trình → Lý do để tin → Kêu gọi hành động',
+  offer: 'Khuyến mãi gây chú ý → Điểm nổi bật của sản phẩm → Khan hiếm hoặc thời hạn → Kêu gọi hành động',
+  scene: 'Hook ở cảnh đầu → nói về đúng thứ đang thấy ở từng cảnh → kêu gọi hành động ở cảnh cuối'
+};
+function structLine(noScene) {
+  const v = noScene && $('#struct').value === 'scene' ? 'aida' : $('#struct').value;
+  if (v === 'custom') { const c = $('#structCustom').value.trim(); return c ? `- Đi đúng cấu trúc, theo thứ tự: ${c}.` : ''; }
+  return STRUCT[v] ? `- Đi đúng cấu trúc, theo thứ tự: ${STRUCT[v]}.` : '';
+}
+function extraLine() {
+  const x = $('#extra').value.trim();
+  return x ? `\nYêu cầu riêng của người bán (ưu tiên làm theo, trừ khi trái với quy tắc không bịa thông tin):\n"""${x}"""` : '';
+}
+function syncStructHint() {
+  const v = $('#struct').value;
+  $('#structCustom').hidden = v !== 'custom';
+  $('#structHint').textContent = v === 'scene' && voiceMode !== 'none' ? 'Khi tải giọng đọc lên, kịch bản viết theo Hook → Vấn đề → Sản phẩm → Kêu gọi và phụ đề chạy theo độ dài giọng.'
+    : v === 'scene' ? 'Lời đọc canh theo từng cảnh: cảnh nào đang chiếu thì phụ đề nói đúng thứ đó.'
+    : v === 'custom' ? 'Ghi các phần theo thứ tự, ngăn cách bằng dấu →.' : 'Phụ đề chia đều theo thời lượng video.';
+}
+$('#struct').addEventListener('change', syncStructHint);
+$('#subs').addEventListener('change', () => { $('#subOpts').hidden = !$('#subs').checked; });
+async function grabAt(s, tm, c, g) {
+  let el, sw, sh;
+  if (s.kind === 'video') { await ensureEl(s); await seekTo(s.el, tm); el = s.el; sw = s.w; sh = s.h; }
+  else { s.draw(tm); el = s.canvas; sw = 540; sh = 960; }
+  const sc = Math.min(288 / sw, 512 / sh); c.width = Math.round(sw * sc); c.height = Math.round(sh * sc);
+  g.drawImage(el, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', .8));
+}
+async function sceneScript(p, signal) {
+  const lim = await sample.limits();
+  const per = lim.images ? Math.min(lim.images.maxCount, 12) : 0;
+  const c = document.createElement('canvas'), g = c.getContext('2d'), blobs = [];
+  for (let k = 0; k < p.clips.length && k < per; k++) { const cl = p.clips[k]; blobs.push(await grabAt(cl.src, cl.start + cl.len / 2, c, g)); }
+  const list = p.clips.map((cl, k) => `Cảnh ${k + 1}${cl.sceneName ? ` [${cl.sceneName}]` : ''}: dài ${cl.show.toFixed(1)} giây, tối đa ${Math.max(3, Math.round(cl.show * 2.6))} từ${k < blobs.length ? ` (ảnh số ${k})` : ' (không có ảnh, nối tiếp ý cảnh trước)'}`).join('\n');
+  const res = await sample.json(
+    `Viết lời đọc quảng cáo cho video ngắn ${p.D.toFixed(0)} giây gồm ${p.clips.length} cảnh, theo đúng thứ tự dưới đây.
+${blobs.length ? 'Ảnh gửi kèm là khung hình giữa của từng cảnh, đánh số từ 0 (ảnh số 0 là cảnh 1).' : ''}
+${list}
+Yêu cầu:
+- Mỗi cảnh một câu hoặc cụm lời, nói về đúng thứ đang thấy trong khung hình cảnh đó${p.clips.some(c => c.sceneName) ? ' và đúng vai trò ghi trong ngoặc vuông' : ''}, không vượt số từ cho phép.
+${structLine() || `- Đi đúng cấu trúc: ${STRUCT.scene}.`}
+- Phong cách: ${STYLE[$('#style').value]}.
+- Tiếng Việt tự nhiên, các câu nối liền thành một mạch.
+- Chỉ dùng thông tin trong mô tả và trong ảnh; không bịa giá, khuyến mãi hay công dụng.${extraLine()}
+Mô tả sản phẩm:
+"""${$('#desc').value.trim()}"""
+Chỉ trả về JSON: {"lines":["lời cảnh 1","lời cảnh 2"]} với đúng ${p.clips.length} phần tử.`,
+    { images: blobs.length ? blobs : undefined, modelTier: 'default', cache: false, signal });
+  const lines = (res?.lines || []).map(x => typeof x === 'string' ? x.trim() : '');
+  if (!lines.some(Boolean)) throw { code: 'empty' };
+  while (lines.length < p.clips.length) lines.push('');
+  return lines.slice(0, p.clips.length);
+}
+async function writeScripts(n, D, signal) {
+  const words = Math.round(D * 2.6);
+  const res = await sample.json(
+    `Viết ${n} kịch bản lời đọc quảng cáo KHÁC NHAU cho video ngắn dài ${D} giây (TikTok/Reels).
+Yêu cầu mỗi kịch bản:
+- Tiếng Việt, khoảng ${words} từ (đọc vừa đủ ${D} giây).
+- Câu đầu là câu móc gây tò mò; câu cuối kêu gọi hành động (bấm giỏ hàng, nhắn shop…).
+- Phong cách: ${STYLE[$('#style').value]}.
+- Mỗi kịch bản mở đầu bằng góc nhìn khác nhau (vấn đề khách gặp, kết quả, so sánh, khuyến mãi…).
+${structLine(true)}
+- Chỉ dùng thông tin trong mô tả; không bịa giá, khuyến mãi hay công dụng không có trong mô tả.${extraLine()}
+Mô tả sản phẩm:
+"""${$('#desc').value.trim()}"""
+Chỉ trả về JSON: {"scripts":["kịch bản 1","kịch bản 2"]}`,
+    { modelTier: 'default', signal, cache: false });
+  const arr = (res?.scripts || []).filter(x => typeof x === 'string' && x.trim());
+  if (!arr.length) throw { code: 'empty' };
+  while (arr.length < n) arr.push(arr[arr.length % arr.length]);
+  return arr.slice(0, n);
+}
+function aiErr(e) {
+  const c = e?.code;
+  if (c === 'not_granted') return 'Bạn chưa cho phép dùng AI nên bỏ qua bước này.';
+  if (c === 'rate_limited') return 'AI đang bận, thử lại sau ít phút.';
+  if (c === 'images_unavailable') return 'Chế độ xem này không gửi được ảnh cho AI.';
+  if (c === 'server_error' || c === 'bad_json') return e.message + '.';
+  return 'AI không trả lời được' + (c ? ` (${c})` : '') + '.';
+}
+function subChunks(text, D) {
+  const parts = [];
+  text.replace(/\s+/g, ' ').trim().split(/(?<=[.!?…,;:])\s+/).forEach(sent => { const w = sent.split(' '); for (let i = 0; i < w.length; i += 7) parts.push(w.slice(i, i + 7).join(' ')); });
+  const total = parts.reduce((a, p) => a + p.length, 0) || 1;
+  let t = 0.15; const span = D - 0.3;
+  return parts.map(p => { const d = span * p.length / total; const c = { a: t, b: t + d, text: p }; t += d; return c; });
+}
+function sceneSubs(p, lines) {
+  const out = []; let t = 0;
+  p.clips.forEach((cl, k) => { if (lines[k]) subChunks(lines[k], cl.show).forEach(c => out.push({ a: t + c.a, b: t + c.b, text: c.text })); t += cl.show; });
+  return out;
+}
+$('#tryScript').onclick = async () => {
+  const pv = $('#scriptPreview');
+  if (!$('#desc').value.trim()) { pv.hidden = false; pv.textContent = 'Nhập mô tả sản phẩm trước.'; return; }
+  $('#tryScript').disabled = true; pv.hidden = false; pv.textContent = 'Claude đang viết…';
+  try {
+    if ($('#struct').value === 'scene') {
+      const [pl] = await makePlans(1, t => pv.textContent = t);
+      pv.textContent = `Claude đang xem ${pl.clips.length} cảnh và viết…`;
+      const lines = await sceneScript(pl);
+      pv.textContent = lines.map((l, k) => `Cảnh ${k + 1} (${pl.clips[k].show.toFixed(1)}s): ${l || '—'}`).join('\n');
+    } else pv.textContent = (await writeScripts(1, curDur()))[0];
+  } catch (e) { pv.textContent = typeof e === 'string' ? e : aiErr(e); }
+  finally { $('#tryScript').disabled = !sample; }
+};
+
+/* ================= uploaded voice-over (e.g. made in CapCut) ================= */
+let voiceMode = 'none', pickMode = 'auto';
+const voiceRows = [], voiceEl = $('#voice');
+const HOW_VOICE = '<b>Lồng giọng CapCut:</b> 1) Bấm "AI viết kịch bản" hoặc tự gõ lời cho từng video. 2) Bấm "Copy lời", dán vào CapCut, dùng <b>Chuyển văn bản thành giọng nói</b> rồi xuất file MP3 (hoặc xuất video, hệ thống chỉ lấy tiếng). 3) Tải file lên đúng ô của video đó. Video dài bằng giọng đọc, phụ đề chạy theo lời.';
+const HOW_SCRIPT = '<b>Dựng theo kịch bản:</b> viết hoặc dán kịch bản cho từng video, <b>mỗi dòng một câu</b>. AI xem từng cảnh quay, chọn cảnh có nội dung khớp với từng câu rồi ghép theo đúng thứ tự câu. Tải giọng đọc lên (tùy chọn) thì mỗi câu dài đúng theo giọng; không có giọng thì thời lượng ước theo độ dài chữ.';
+const HOW_AI = '<b>Giọng AI (Google):</b> mỗi video một kịch bản. Để trống thì AI tự viết từ mô tả sản phẩm, hoặc bấm "AI viết kịch bản" để xem và sửa trước. Mỗi câu được đọc riêng nên phụ đề khớp đúng từng câu, video dài bằng giọng đọc.';
+function syncVoicePanel() {
+  $('#voicePanel').hidden = !(voiceMode !== 'none' || pickMode === 'script');
+  $('#vHow').innerHTML = pickMode === 'script' ? HOW_SCRIPT : voiceMode === 'ai' ? HOW_AI : HOW_VOICE;
+  $('#aiVoiceBox').hidden = voiceMode !== 'ai';
+  $('#vPreview').hidden = pickMode !== 'script';
+  $('#pmodeHint').textContent = pickMode === 'script' ? 'Bạn viết kịch bản trước, AI tự chọn khung hình hợp với từng câu. Cấu trúc và phong cách ở trên chỉ dùng khi bấm "AI viết kịch bản".' : 'Máy tự ghép cảnh, AI viết kịch bản theo cấu trúc bạn chọn ở trên.';
+  renderVoiceRows(); syncStructHint();
+}
+$$('#vmode button').forEach(b => b.onclick = () => { voiceMode = b.dataset.v; $$('#vmode button').forEach(x => x.classList.toggle('on', x === b)); syncVoicePanel(); });
+$$('#pmode button').forEach(b => b.onclick = () => { pickMode = b.dataset.v; $$('#pmode button').forEach(x => x.classList.toggle('on', x === b)); syncVoicePanel(); });
+const estDur = text => Math.max(5, Math.min(90, text.replace(/\s+/g, ' ').trim().length / 14 + 0.6));
+// the voice a row will use: Google voice in AI mode, otherwise the uploaded file
+const rowVoice = r => !r ? null : voiceMode === 'ai' ? (r.ai || null) : (r.url ? r : null);
+
+/* ---------- Google voices: one request per sentence, joined into one track with known line timings ---------- */
+let decCtx = null;
+async function loadVoices() {
+  const sel = $('#ttsVoice'); if (!health.tts) { sel.innerHTML = '<option value="">Máy chủ chưa bật giọng Google</option>'; $('#ttsTry').disabled = true; return; }
+  try {
+    const list = await api('voices'), cur = (() => { try { return localStorage.getItem('rs-voice'); } catch (e) { return null; } })();
+    const order = ['Chirp3-HD', 'Chirp-HD', 'Neural2', 'Wavenet', 'Standard'], gender = { FEMALE: 'Nữ', MALE: 'Nam' };
+    sel.innerHTML = '';
+    for (const type of [...order, ...new Set(list.map(v => v.type).filter(t => !order.includes(t)))]) {
+      const vs = list.filter(v => v.type === type); if (!vs.length) continue;
+      const g = document.createElement('optgroup'); g.label = type === 'Standard' ? 'Standard (rẻ nhất)' : type; sel.appendChild(g);
+      for (const v of vs) { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name.replace('vi-VN-', '')} · ${gender[v.gender] || v.gender}`; g.appendChild(o); }
+    }
+    sel.value = list.some(v => v.name === cur) ? cur : (list.find(v => v.name === 'vi-VN-Neural2-A') || list[0])?.name;
+    $('#ttsTry').disabled = false;
+  } catch (e) { sel.innerHTML = '<option value="">Không tải được danh sách giọng</option>'; $('#ttsNote').textContent = e.message || 'Lỗi'; }
+}
+$('#ttsVoice').onchange = () => { try { localStorage.setItem('rs-voice', $('#ttsVoice').value); } catch (e) {} };
+$('#ttsRate').oninput = e => { $('#ttsRateO').textContent = (+e.target.value).toFixed(2).replace(/0$/, '') + '×'; };
+const tryAudio = new Audio();
+$('#ttsTry').onclick = async () => {
+  const b = $('#ttsTry'); b.disabled = true; $('#ttsNote').textContent = 'Đang tạo giọng…';
+  try {
+    const buf = await api('tts', { text: 'Xin chào cả nhà! Hôm nay mình giới thiệu một sản phẩm cực hay, bấm vào giỏ hàng để nhận ưu đãi nhé.', voice: $('#ttsVoice').value, rate: +$('#ttsRate').value }, true);
+    tryAudio.src = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' })); await tryAudio.play(); $('#ttsNote').textContent = 'Đang phát câu mẫu.';
+  } catch (e) { $('#ttsNote').textContent = e.message || 'Không tạo được giọng.'; }
+  finally { b.disabled = false; }
+};
+function wavFromBuffer(ab) {
+  const ch = ab.getChannelData(0), n = ch.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), sr = ab.sampleRate;
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const s = Math.max(-1, Math.min(1, ch[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+async function synthRow(r) {
+  const voice = $('#ttsVoice').value, rate = +$('#ttsRate').value, lines = scriptLines(r.text);
+  if (!voice) throw 'Chưa chọn được giọng Google.';
+  if (!lines.length) throw 'Kịch bản trống.';
+  const key = voice + '|' + rate + '|' + lines.join('\n');
+  if (r.ai?.key === key) return r.ai;
+  decCtx = decCtx || new AudioContext();
+  const bufs = [];
+  for (const ln of lines) bufs.push(await decCtx.decodeAudioData(await api('tts', { text: ln, voice, rate }, true)));
+  const sr = bufs[0].sampleRate, gap = Math.round(sr * 0.12), total = bufs.reduce((a, b) => a + b.length + gap, 0);
+  const out = decCtx.createBuffer(1, total, sr), data = out.getChannelData(0); let pos = 0;
+  for (const b of bufs) { data.set(b.getChannelData(0), pos); pos += b.length + gap; }
+  if (r.ai?.url) URL.revokeObjectURL(r.ai.url);
+  r.ai = { key, url: URL.createObjectURL(wavFromBuffer(out)), dur: total / sr, lineDurs: bufs.map(b => b.duration + gap / sr), lines, name: voice.replace('vi-VN-', 'Giọng ') };
+  return r.ai;
+}
+function subsFromLines(lines, durs) {
+  const out = []; let t = 0;
+  lines.forEach((ln, j) => { subChunks(ln, durs[j]).forEach(s => out.push({ a: t + s.a, b: t + s.b, text: s.text })); t += durs[j]; });
+  return out;
+}
+
+function renderVoiceRows() {
+  if ($('#voicePanel').hidden) return;
+  const n = curCount(), ai = voiceMode === 'ai';
+  while (voiceRows.length < n) voiceRows.push({ text: '', url: '', dur: 0, name: '' });
+  $('#vWrite').textContent = `AI viết kịch bản cho ${n} video`; $('#vWrite').disabled = !sample;
+  const box = $('#vRows'); box.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const r = voiceRows[i], d = document.createElement('div'); d.className = 'vrow';
+    d.innerHTML = `<div class="row" style="justify-content:space-between"><b>Video ${i + 1}</b><span class="mono"></span></div>
+      <textarea id="vtext${i}" style="min-height:64px" placeholder="${ai ? 'Để trống để AI tự viết, hoặc gõ lời đọc cho' : 'Lời đọc cho'} video ${i + 1}…"></textarea>
+      <div class="row"><button class="btn small" data-a="copy">Copy lời</button>
+        <button class="btn small primary" data-a="listen" ${ai ? '' : 'hidden'}>▶ Tạo và nghe giọng</button>
+        <label class="btn small primary" for="vfile${i}" ${ai ? 'hidden' : ''}>Tải giọng đọc lên</label><input type="file" id="vfile${i}" accept="audio/*,video/mp4,video/quicktime" hidden>
+        <button class="btn small danger" data-a="rm" hidden>Bỏ giọng</button><span class="hint fn"></span></div>
+      <audio controls preload="metadata" hidden></audio>`;
+    const ta = d.querySelector('textarea'), au = d.querySelector('audio'), fn = d.querySelector('.fn'), rm = d.querySelector('[data-a=rm]'), mono = d.querySelector('.mono');
+    const show = () => {
+      const v = rowVoice(r);
+      au.hidden = !v; if (v && au.src !== v.url) au.src = v.url; rm.hidden = ai || !r.url;
+      fn.textContent = v ? v.name : ai ? 'Giọng sẽ được tạo khi bấm Bắt đầu tạo video' : pickMode === 'script' ? 'Chưa có giọng (tùy chọn)' : 'Chưa có giọng, video này sẽ không có lời đọc';
+      mono.textContent = v ? `giọng ${v.dur.toFixed(1)}s → video ${Math.min(90, v.dur + 0.4).toFixed(1)}s`
+        : r.text.trim() ? `${scriptLines(r.text).length} câu · ≈ ${estDur(r.text).toFixed(1)}s` : ai ? 'AI sẽ viết' : pickMode === 'script' ? 'chưa có kịch bản' : `video ${curDur()}s`;
+    };
+    ta.value = r.text; ta.oninput = () => { r.text = ta.value; if (r.ai && r.ai.key.split('|').slice(2).join('|') !== scriptLines(r.text).join('\n')) r.ai = null; show(); };
+    show();
+    d.querySelector('[data-a=copy]').onclick = async e => { try { await navigator.clipboard.writeText(ta.value); e.target.textContent = 'Đã copy'; } catch (er) { ta.select(); e.target.textContent = 'Bấm Ctrl+C'; } };
+    d.querySelector('[data-a=listen]').onclick = async e => {
+      if (!r.text.trim()) { fn.textContent = 'Nhập kịch bản trước.'; return; }
+      e.target.disabled = true; fn.textContent = 'Đang tạo giọng…';
+      try { await synthRow(r); show(); au.play().catch(() => {}); } catch (er) { fn.textContent = typeof er === 'string' ? er : er.message || 'Không tạo được giọng.'; }
+      finally { e.target.disabled = false; }
+    };
+    d.querySelector('input[type=file]').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      const url = URL.createObjectURL(f), a = new Audio(); a.preload = 'metadata'; a.src = url;
+      await once(a, 'loadedmetadata', 6000);
+      if (!isFinite(a.duration) || !a.duration) { fn.textContent = 'Không đọc được file này. Hãy xuất MP3 hoặc M4A.'; URL.revokeObjectURL(url); return; }
+      if (r.url) URL.revokeObjectURL(r.url);
+      Object.assign(r, { url, dur: a.duration, name: f.name }); show();
+    };
+    rm.onclick = () => { URL.revokeObjectURL(r.url); Object.assign(r, { url: '', dur: 0, name: '' }); show(); };
+    box.appendChild(d);
+  }
+}
+['#count', '#scount', '#dur', '#sdur'].forEach(s => $(s).addEventListener('input', renderVoiceRows));
+$('#vWrite').onclick = async () => {
+  if (!$('#desc').value.trim()) { $('#vNote').textContent = 'Nhập mô tả sản phẩm ở trên trước.'; return; }
+  const n = curCount(); $('#vWrite').disabled = true; $('#vNote').textContent = `Claude đang viết ${n} kịch bản…`;
+  try {
+    (await writeScripts(n, curDur())).forEach((t, i) => voiceRows[i].text = pickMode === 'script' ? t.split(/(?<=[.!?…])\s+/).join('\n') : t);
+    $('#vNote').textContent = 'Đã viết xong. Sửa lại nếu cần' + (voiceMode === 'upload' ? ' rồi copy sang CapCut.' : '.'); renderVoiceRows();
+  }
+  catch (e) { $('#vNote').textContent = aiErr(e); }
+  finally { $('#vWrite').disabled = !sample; }
+};
+$('#vv').addEventListener('input', e => { $('#vvO').textContent = e.target.value + '%'; applyGains(); });
+
+/* ================= script-first editing: AI picks the footage for each line ================= */
+function scriptLines(text) {
+  const t = text.replace(/\[(Cảnh|Câu) \d+\]\s*/g, '').trim();
+  let lines = t.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (lines.length < 2) lines = t.split(/(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
+  return lines;
+}
+async function describeShots(vids, onStatus) {
+  const lim = await sample.limits();
+  if (!lim.images) throw { code: 'images_unavailable' };
+  const per = Math.max(1, Math.min(8, lim.images.maxCount)), jobs = [];
+  for (const s of vids) { s.shotDesc = s.shotDesc || []; s.shots.forEach((_, i) => { if (!s.shotDesc[i]) jobs.push({ s, i }); }); }
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  for (let k = 0; k < jobs.length; k += per) {
+    if (S.abort) throw 'abort';
+    const batch = jobs.slice(k, k + per), blobs = [];
+    for (const j of batch) { const [a, b] = j.s.shots[j.i]; blobs.push(await grabAt(j.s, (a + b) / 2, c, g)); }
+    onStatus(`Claude đang xem cảnh quay ${Math.min(k + per, jobs.length)}/${jobs.length}…`);
+    const res = await sample.json(
+      `Bạn nhận ${blobs.length} ảnh, là khung hình từ các cảnh quay video bán hàng, đánh số 0 đến ${blobs.length - 1} theo thứ tự gửi.
+Với mỗi ảnh, mô tả ngắn bằng tiếng Việt (tối đa 15 từ): đang thấy gì, hành động gì, cận cảnh hay toàn cảnh, có chữ/giá trên hình không.
+face: true nếu thấy rõ khuôn mặt người.
+Chỉ trả về JSON: {"items":[{"i":0,"desc":"cận cảnh tay dán tấm sàn lên nền cũ","face":false}]}`,
+      { images: blobs, modelTier: 'default' });
+    for (const it of res?.items || []) { const j = batch[it.i]; if (j && typeof it.desc === 'string') j.s.shotDesc[j.i] = { desc: it.desc.trim(), face: !!it.face }; }
+    for (const j of batch) if (!j.s.shotDesc[j.i]) j.s.shotDesc[j.i] = { desc: 'cảnh quay sản phẩm', face: false };
+  }
+}
+async function buildCatalog(onStatus) {
+  const srcs = curSources(), vids = srcs.filter(s => s.kind === 'video');
+  for (let i = 0; i < vids.length; i++) await analyze(vids[i], () => onStatus(`Đang tìm điểm chuyển cảnh: video ${i + 1}/${vids.length}`));
+  if (vids.length) await describeShots(vids, onStatus);
+  const sceneOf = new Map();
+  if (S.route === 'source') curProj()?.scenes.forEach((sc, k) => sc.clips.forEach(c => sceneOf.set(c.id, `PC${k + 1}: ${sc.name}`)));
+  const noface = S.route === 'remix' && $('#mode').value !== 'std', cat = [];
+  for (const s of srcs) s.shots.forEach((sh, i) => {
+    const d = s.kind === 'video' ? s.shotDesc?.[i] : { desc: `${s.name} cảnh ${i + 1}: video mẫu, khối màu xoay`, face: false };
+    if (!d || sh[1] - sh[0] < 0.6 || (noface && d.face)) return;
+    cat.push({ id: 'C' + (cat.length + 1), src: s, a: sh[0], b: sh[1], desc: d.desc, info: { face: d.face }, scene: sceneOf.get(s.id) });
+  });
+  if (!cat.length) throw 'Không có cảnh nào dùng được để dựng theo kịch bản.';
+  return cat;
+}
+async function matchLines(cat, lines, durs, usage) {
+  const list = cat.map(c => `${c.id} | ${(c.b - c.a).toFixed(1)}s${c.scene ? ` | ${c.scene}` : ''}${usage.get(c.id) ? ` | đã dùng ${usage.get(c.id)} lần` : ''} | ${c.desc}`).join('\n');
+  const res = await sample.json(
+    `Bạn là biên tập viên video quảng cáo. Chọn cảnh quay minh họa cho từng câu của kịch bản.
+Cảnh có sẵn (mã | độ dài${S.route === 'source' ? ' | phân cảnh' : ''} | mô tả):
+${list}
+Kịch bản (mỗi câu cần đủ số giây ghi kèm):
+${lines.map((l, j) => `${j + 1}. (${durs[j].toFixed(1)}s) ${l}`).join('\n')}
+Quy tắc:
+- Mỗi câu chọn 1–3 cảnh có hình ảnh khớp nhất với ý của câu, theo thứ tự chiếu.
+- Tổng độ dài cảnh chọn cho một câu nên bằng hoặc dài hơn số giây câu đó cần.
+- Trong cùng video, không dùng lại một cảnh cho hai câu nếu còn cảnh khác phù hợp; ưu tiên cảnh chưa dùng hoặc dùng ít lần.
+- Câu mở đầu dùng cảnh bắt mắt nhất; câu nói về giá hoặc kêu gọi mua dùng cảnh sản phẩm rõ nhất.
+Chỉ trả về JSON: {"pick":[["C1","C4"],["C2"]]} với đúng ${lines.length} phần tử theo thứ tự câu.`,
+    { modelTier: 'default', cache: false });
+  return (res?.pick || []).map(a => Array.isArray(a) ? a.filter(x => typeof x === 'string') : []);
+}
+const fmtT = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(1).padStart(4, '0')}`; };
+async function planFromScript(cat, row, usage) {
+  const lines = scriptLines(row.text);
+  const v = rowVoice(row), total = v ? v.dur : estDur(row.text);
+  const wsum = lines.reduce((a, l) => a + l.length, 0) || 1;
+  const durs = v?.lineDurs?.length === lines.length ? [...v.lineDurs] : lines.map(l => total * l.length / wsum); durs[durs.length - 1] += 0.4;
+  const picks = await matchLines(cat, lines, durs, usage);
+  const fx = variation(S.route === 'remix' ? anti : 0);
+  const clips = [], subs = [], mapping = [], segments = [], inVideo = new Set(); let t = 0;
+  lines.forEach((ln, j) => {
+    const t0 = t, seg = fillClips(cat, picks[j] || [], durs[j], fx, usage, inVideo);
+    seg.forEach(c => { clips.push(c); t += c.show; });
+    segments.push({ text: ln, clips: seg });
+    if ($('#subs').checked) subChunks(ln, t - t0).forEach(s => subs.push({ a: t0 + s.a, b: t0 + s.b, text: s.text }));
+    mapping.push(`Câu ${j + 1} (${(t - t0).toFixed(1)}s): ${ln}\n   → ${seg.map(c => `${c.src.name} ${fmtT(c.start)}–${fmtT(c.start + c.len)}`).join(', ')}`);
+  });
+  return { plan: { clips, fx, D: t }, subs, mapping, segments, voice: v,
+    script: lines.map((l, j) => `[Câu ${j + 1}] ${l}`).join('\n') };
+}
+// footage for one line: the picked shots first, then the least-used ones, until the line's time is covered
+function fillClips(cat, ids, need, fx, usage, inVideo) {
+  const byId = new Map(cat.map(c => [c.id, c])), out = [];
+  const chosen = ids.map(id => byId.get(id)).filter(Boolean);
+  const spare = cat.filter(c => !inVideo.has(c.id)).sort((x, y) => (usage.get(x.id) || 0) - (usage.get(y.id) || 0) + Math.random() - .5);
+  for (const c of [...chosen, ...spare, ...shuffle([...cat])]) {
+    if (need < 0.3) break;
+    const len = c.b - c.a, srcLen = Math.min(len, need * fx.speed);
+    if (srcLen < 0.4) continue;
+    const show = srcLen / fx.speed, start = c.a + Math.random() * (len - srcLen);
+    out.push({ src: c.src, start, len: srcLen, show, info: c.info, key: c.id, sceneName: c.scene });
+    need -= show; inVideo.add(c.id); usage.set(c.id, (usage.get(c.id) || 0) + 1);
+  }
+  return out;
+}
+$('#vPreview').onclick = async () => {
+  const out = $('#matchPreview'), r = voiceRows[0]; out.hidden = false;
+  if (!sample) { out.textContent = 'Máy chủ chưa bật AI (thiếu ANTHROPIC_API_KEY).'; return; }
+  if (!r?.text.trim()) { out.textContent = 'Nhập kịch bản cho Video 1 trước.'; return; }
+  $('#vPreview').disabled = true;
+  try { const cat = await buildCatalog(t => out.textContent = t); out.textContent = 'Claude đang chọn cảnh…'; out.textContent = (await planFromScript(cat, r, new Map())).mapping.join('\n'); }
+  catch (e) { out.textContent = typeof e === 'string' ? e : aiErr(e); }
+  finally { $('#vPreview').disabled = false; }
+};
+
+/* ================= drawing ================= */
+const tiny = document.createElement('canvas'); tiny.width = 27; tiny.height = 48;
+const noise = document.createElement('canvas'); noise.width = noise.height = 256;
+(() => { const n = noise.getContext('2d'), d = n.createImageData(256, 256); for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } n.putImageData(d, 0, 0); })();
+function coverDraw(g, el, sw, sh, w, h) { const s = Math.max(w / sw, h / sh); g.drawImage(el, (w - sw * s) / 2, (h - sh * s) / 2, sw * s, sh * s); }
+function drawFrame(el, sw, sh, clip, fx, outT, subs) {
+  let sx = 0, sy = 0, cw = sw, ch = sh;
+  const box = clip.zoomBox && clip.info?.face && clip.info.box;
+  if (box) {
+    let [bx, by, bw, bh] = box.map((v, i) => v * (i % 2 ? sh : sw));
+    const cx = bx + bw / 2, cy = by + bh / 2;
+    let w = Math.max(bw * 1.35, bh * 1.35 * 9 / 16), h = w * 16 / 9;
+    if (h > sh) { h = sh; w = h * 9 / 16; } if (w > sw) { w = sw; h = w * 16 / 9; }
+    sx = Math.min(Math.max(0, cx - w / 2), sw - w); sy = Math.min(Math.max(0, cy - h / 2), sh - h); cw = w; ch = h;
+  }
+  const ar = cw / ch, cover = ar > .45 && ar < .8;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.filter = 'none';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (!cover) {
+    const t = tiny.getContext('2d'), s = Math.max(27 / cw, 48 / ch);
+    t.drawImage(el, sx, sy, cw, ch, (27 - cw * s) / 2, (48 - ch * s) / 2, cw * s, ch * s);
+    ctx.imageSmoothingQuality = 'high'; ctx.globalAlpha = .55; ctx.drawImage(tiny, 0, 0, W, H); ctx.globalAlpha = 1;
+  }
+  const b = fx.border;
+  ctx.save(); ctx.beginPath(); ctx.rect(b, b, W - 2 * b, H - 2 * b); ctx.clip();
+  const s = (cover ? Math.max(W / cw, H / ch) : Math.min(W / cw, H / ch)) * fx.zoom;
+  ctx.translate(W / 2, H / 2); ctx.rotate(fx.rot * Math.PI / 180); ctx.scale(fx.flip ? -1 : 1, 1);
+  if (fx.bright !== 100 || fx.contrast !== 100 || fx.sat !== 100 || fx.hue) ctx.filter = `brightness(${fx.bright}%) contrast(${fx.contrast}%) saturate(${fx.sat}%) hue-rotate(${fx.hue}deg)`;
+  ctx.drawImage(el, sx, sy, cw, ch, -cw * s / 2, -ch * s / 2, cw * s, ch * s);
+  ctx.restore(); ctx.filter = 'none';
+  if (fx.grain) {
+    ctx.save(); ctx.globalAlpha = fx.grain / 100; ctx.globalCompositeOperation = 'overlay';
+    ctx.translate(-(Math.random() * 256 | 0), -(Math.random() * 256 | 0));
+    ctx.fillStyle = ctx.createPattern(noise, 'repeat'); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore();
+  }
+  if (b) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, b); ctx.fillRect(0, H - b, W, b); ctx.fillRect(0, 0, b, H); ctx.fillRect(W - b, 0, b, H); }
+  const cur = subs?.find(c => outT >= c.a && outT < c.b);
+  if (cur) drawSubOn(ctx, W, H, cur.text, (outT - cur.a) / (cur.b - cur.a));
+}
+
+/* ================= subtitle look: font, style, colours, position + live preview ================= */
+// [name, Google Fonts weight spec, heaviest weight available] — all of these include Vietnamese glyphs
+const FONTS = [['Be Vietnam Pro', 'wght@400;700;900', 900], ['Roboto', 'wght@400;700;900', 900], ['Montserrat', 'wght@400;700;900', 900], ['Lexend', 'wght@400;700;900', 900],
+  ['Nunito', 'wght@400;700;900', 900], ['Oswald', 'wght@400;700', 700], ['Baloo 2', 'wght@400;700;800', 800], ['Playfair Display', 'wght@400;700;900', 900],
+  ['Dancing Script', 'wght@400;700', 700], ['Anton', '', 400], ['Paytone One', '', 400], ['Lobster', '', 400], ['Pacifico', '', 400], ['Patrick Hand', '', 400]];
+const SUB_DEF = { font: 'Be Vietnam Pro', weight: 900, size: 64, effect: 'stroke', color: '#ffffff', stroke: '#000000', strokeW: 12, karaoke: true, hl: '#ffd60a', upper: false, y: 72 };
+const SUB_PRESETS = {
+  'TikTok cổ điển': {},
+  'Nền đen gọn': { font: 'Roboto', weight: 700, size: 56, effect: 'box', stroke: '#000000', karaoke: false },
+  'Vàng nổi bật': { font: 'Anton', weight: 400, size: 80, color: '#ffd60a', strokeW: 14, upper: true, hl: '#ffffff' },
+  'Thanh lịch': { font: 'Playfair Display', weight: 700, size: 60, effect: 'shadow', karaoke: false },
+  'Vui nhộn': { font: 'Baloo 2', weight: 800, size: 70, stroke: '#ff3d6e', strokeW: 14 },
+  'Viết tay': { font: 'Patrick Hand', weight: 400, size: 74, effect: 'both', strokeW: 8, karaoke: false },
+  'Hồng pastel': { font: 'Nunito', weight: 900, size: 62, effect: 'box', color: '#ffffff', stroke: '#ff5c8a', karaoke: true, hl: '#fff27a' }
+};
+const SWATCHES = ['#ffffff', '#ffd60a', '#000000', '#ff3d6e', '#ff8a00', '#2fd1c0', '#4da3ff', '#b388ff'];
+let sub = { ...SUB_DEF };
+try { Object.assign(sub, JSON.parse(localStorage.getItem('rs-sub') || '{}')); } catch (e) {}
+const fontInfo = n => FONTS.find(f => f[0] === n) || FONTS[0];
+const subWeight = () => Math.min(sub.weight, fontInfo(sub.font)[2]);
+const loadedFonts = new Set();
+function loadFont(name) {
+  if (loadedFonts.has(name)) return; loadedFonts.add(name);
+  const [n, spec] = fontInfo(name), l = document.createElement('link'); l.rel = 'stylesheet';
+  l.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(n).replace(/%20/g, '+')}${spec ? ':' + spec : ''}&display=swap`;
+  document.head.appendChild(l);
+}
+async function ensureFont() {
+  loadFont(sub.font);
+  try { await Promise.race([document.fonts.load(`${subWeight()} 64px "${sub.font}"`, 'Tiếng Việt ạ'), new Promise(r => setTimeout(r, 5000))]); } catch (e) {}
+}
+function drawSubOn(g, Wd, Hd, text, prog) {
+  const k = Wd / 1080, fs = sub.size * k, lh = fs * 1.28, eff = sub.effect;
+  const txt = sub.upper ? text.toLocaleUpperCase('vi') : text;
+  g.save(); g.font = `${subWeight()} ${fs}px "${sub.font}", "Be Vietnam Pro", sans-serif`; g.textBaseline = 'middle'; g.textAlign = 'left'; g.lineJoin = 'round';
+  const words = txt.split(' ').filter(Boolean), sp = g.measureText(' ').width, lines = []; let line = [], lw = 0;
+  for (const w of words) { const ww = g.measureText(w).width; if (line.length && lw + sp + ww > Wd * .84) { lines.push(line); line = []; lw = 0; } line.push({ w, ww }); lw += (line.length > 1 ? sp : 0) + ww; }
+  if (line.length) lines.push(line);
+  const lit = sub.karaoke ? Math.ceil(Math.max(0, Math.min(1, prog)) * words.length) : -1;
+  let y = Hd * sub.y / 100 - (lines.length - 1) * lh / 2, idx = 0;
+  for (const ln of lines) {
+    const tw = ln.reduce((a, o) => a + o.ww, 0) + sp * (ln.length - 1); let x = Wd / 2 - tw / 2;
+    if (eff === 'box') { g.globalAlpha = .78; g.fillStyle = sub.stroke; g.beginPath(); const px = 22 * k; g.roundRect ? g.roundRect(x - px, y - lh / 2, tw + 2 * px, lh, 14 * k) : g.rect(x - px, y - lh / 2, tw + 2 * px, lh); g.fill(); g.globalAlpha = 1; }
+    for (const o of ln) {
+      if (eff === 'shadow' || eff === 'both') { g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 16 * k; g.shadowOffsetY = 5 * k; }
+      if ((eff === 'stroke' || eff === 'both') && sub.strokeW > 0) { g.lineWidth = sub.strokeW * k; g.strokeStyle = sub.stroke; g.strokeText(o.w, x, y); g.shadowColor = 'transparent'; }
+      g.fillStyle = idx < lit ? sub.hl : sub.color; g.fillText(o.w, x, y);
+      g.shadowColor = 'transparent'; x += o.ww + sp; idx++;
+    }
+    y += lh;
+  }
+  g.restore();
+}
+// controls
+(() => {
+  const fsel = $('#sFont');
+  for (const [n] of FONTS) { const o = document.createElement('option'); o.value = n; o.textContent = n; o.style.fontFamily = `"${n}"`; fsel.appendChild(o); }
+  const pr = $('#subPresets');
+  for (const name in SUB_PRESETS) { const b = document.createElement('button'); b.textContent = name; b.onclick = () => { sub = { ...SUB_DEF, ...SUB_PRESETS[name] }; syncSubUI(); }; pr.appendChild(b); }
+  const sw = $('#sSw');
+  for (const c of SWATCHES) { const b = document.createElement('button'); b.style.background = c; b.dataset.c = c; b.setAttribute('aria-label', 'Màu ' + c); b.onclick = () => { sub.color = c; syncSubUI(); }; sw.appendChild(b); }
+  const bind = (id, key, parse) => $(id).addEventListener('input', e => { sub[key] = parse ? parse(e.target.value) : e.target.value; syncSubUI(); });
+  bind('#sFont', 'font'); bind('#sWeight', 'weight', Number); bind('#sSize', 'size', Number); bind('#sColor', 'color'); bind('#sStroke', 'stroke');
+  bind('#sStrokeW', 'strokeW', Number); bind('#sHl', 'hl'); bind('#sY', 'y', Number); bind('#sText', '_t');
+  $('#sKara').onchange = e => { sub.karaoke = e.target.checked; syncSubUI(); };
+  $('#sUpper').onchange = e => { sub.upper = e.target.checked; syncSubUI(); };
+  $$('#sEffect button').forEach(b => b.onclick = () => { sub.effect = b.dataset.v; syncSubUI(); });
+  $$('#sYBtns button').forEach(b => b.onclick = () => { sub.y = +b.dataset.y; syncSubUI(); });
+})();
+function syncSubUI() {
+  loadFont(sub.font);
+  $('#sFont').value = sub.font; $('#sWeight').value = String(sub.weight); $('#sWeight').disabled = fontInfo(sub.font)[2] === 400;
+  $('#sSize').value = sub.size; $('#sSizeO').textContent = sub.size + ' px';
+  $$('#sEffect button').forEach(b => b.classList.toggle('on', b.dataset.v === sub.effect));
+  $('#sColor').value = sub.color; $('#sStroke').value = sub.stroke; $('#sStrokeW').value = sub.strokeW; $('#sStrokeWO').textContent = sub.strokeW;
+  $('#sStrokeL').textContent = sub.effect === 'box' ? 'Màu nền hộp' : sub.effect === 'shadow' ? 'Màu viền (không dùng)' : 'Màu viền';
+  $('#sStrokeWF').hidden = !(sub.effect === 'stroke' || sub.effect === 'both');
+  $$('#sSw button').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === sub.color.toLowerCase()));
+  $('#sKara').checked = sub.karaoke; $('#sHl').hidden = !sub.karaoke; $('#sHl').value = sub.hl; $('#sUpper').checked = sub.upper;
+  $('#sY').value = sub.y; $('#sYO').textContent = sub.y <= 30 ? 'phía trên' : sub.y >= 62 ? 'phía dưới' : 'giữa';
+  try { const { _t, ...keep } = sub; localStorage.setItem('rs-sub', JSON.stringify(keep)); } catch (e) {}
+}
+syncSubUI();
+// preview: a real frame from the current footage, with the subtitle animating through one line
+const prevBg = document.createElement('canvas'); prevBg.width = 540; prevBg.height = 960;
+let prevBgFor = null, prevBgBusy = false;
+async function refreshPrevBg() {
+  const s = curSources()[0]; if (!s || prevBgBusy || S.busy) return;
+  const key = s.id; if (prevBgFor === key) return;
+  prevBgBusy = true;
+  try {
+    const g = prevBg.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 540, 960);
+    if (s.kind === 'video') { await ensureEl(s); await seekTo(s.el, Math.min(s.dur / 2, 3)); coverDraw(g, s.el, s.w, s.h, 540, 960); }
+    else { s.draw(2); coverDraw(g, s.canvas, 540, 960, 540, 960); }
+    prevBgFor = key;
+  } catch (e) {} finally { prevBgBusy = false; }
+}
+(function prevLoop(now) {
+  const c = $('#sPrev');
+  if (c.offsetParent && !$('#subOpts').hidden) {
+    refreshPrevBg();
+    const g = c.getContext('2d'); g.drawImage(prevBg, 0, 0);
+    drawSubOn(g, 540, 960, $('#sText').value || 'Phụ đề mẫu', ((now || 0) % 3000) / 2400);
+  }
+  requestAnimationFrame(prevLoop);
+})();
+
+/* ================= audio ================= */
+let actx = null, recDest, origGain, musicGain, voiceGain;
+async function ensureAudio(srcs) {
+  if (!actx) {
+    actx = new AudioContext(); recDest = actx.createMediaStreamDestination();
+    origGain = actx.createGain(); musicGain = actx.createGain(); voiceGain = actx.createGain();
+    origGain.connect(recDest); musicGain.connect(recDest); voiceGain.connect(recDest);
+    actx.createMediaElementSource(music).connect(musicGain);
+    actx.createMediaElementSource(voiceEl).connect(voiceGain);
+  }
+  for (const s of srcs) if (s.kind === 'video') { await ensureEl(s); if (!s.node) { s.node = actx.createMediaElementSource(s.el); s.node.connect(origGain); } }
+  applyGains(); return actx.resume();
+}
+function applyGains() { if (!actx) return; origGain.gain.value = $('#vo').value / 100; musicGain.gain.value = music.src ? $('#vm').value / 100 : 0; voiceGain.gain.value = $('#vv').value / 100; }
+$('#vm').addEventListener('input', e => { $('#vmO').textContent = e.target.value + '%'; applyGains(); });
+$('#vo').addEventListener('input', e => { $('#voO').textContent = e.target.value + '%'; applyGains(); });
+$('#mfile').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; music.src = URL.createObjectURL(f); $('#mname').textContent = f.name; });
+
+/* ================= recording ================= */
+const TYPES = [['video/mp4;codecs=avc1.640028,mp4a.40.2', 'mp4'], ['video/mp4;codecs=avc1.42E01F,mp4a.40.2', 'mp4'], ['video/mp4', 'mp4'], ['video/webm;codecs=vp9,opus', 'webm'], ['video/webm;codecs=vp8,opus', 'webm'], ['video/webm', 'webm']];
+const pick = window.MediaRecorder ? TYPES.find(([t]) => MediaRecorder.isTypeSupported(t)) : null;
+$('#fmt').textContent = pick ? `Xuất ${pick[1].toUpperCase()} 1080×1920, 30 khung/giây` : 'Trình duyệt này chưa hỗ trợ ghi video. Hãy dùng Chrome, Cốc Cốc hoặc Edge bản mới.';
+if (!pick) $('#go').disabled = true;
+const nextFrame = () => new Promise(r => requestAnimationFrame(r));
+async function renderVideo(p, subs, onp, voice) {
+  if (voice) { voiceEl.src = voice.url; await once(voiceEl, 'loadedmetadata', 5000); voiceEl.currentTime = 0; }
+  else voiceEl.removeAttribute('src');
+  const stream = cv.captureStream(30);
+  recDest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+  const rec = new MediaRecorder(stream, { mimeType: pick[0], videoBitsPerSecond: 8e6 });
+  const chunks = []; rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(r => rec.onstop = r);
+  let started = false, outBase = 0;
+  if (music.src) music.currentTime = 0;
+  for (const c of p.clips) {
+    if (S.abort) break;
+    const s = c.src;
+    if (s.kind === 'video') { await ensureEl(s); await seekTo(s.el, c.start); s.el.playbackRate = p.fx.speed; }
+    const draw = t => {
+      const outT = outBase + (t - c.start) / p.fx.speed;
+      if (s.kind === 'video') drawFrame(s.el, s.w, s.h, c, p.fx, outT, subs);
+      else { s.draw(t); drawFrame(s.canvas, 540, 960, c, p.fx, outT, subs); }
+      onp(outT / p.D);
+    };
+    draw(c.start);
+    if (s.kind === 'video') await s.el.play().catch(() => {});
+    if (!started) { rec.start(500); started = true; } else rec.resume();
+    if (music.src) music.play().catch(() => {});
+    if (voice && !voiceEl.ended) voiceEl.play().catch(() => {});
+    const t0 = performance.now(), limit = c.show * 1000 + 4000;
+    while (!S.abort) {
+      await nextFrame();
+      const t = s.kind === 'video' ? s.el.currentTime : c.start + (performance.now() - t0) / 1000 * p.fx.speed;
+      if (t >= c.start + c.len - 0.02 || (s.kind === 'video' && s.el.ended) || performance.now() - t0 > limit) break;
+      draw(t);
+    }
+    rec.pause(); music.pause(); voiceEl.pause(); if (s.kind === 'video') s.el.pause();
+    outBase += c.show;
+  }
+  if (!started) return null;
+  rec.stop(); await stopped;
+  return new Blob(chunks, { type: pick[0].split(';')[0] });
+}
+
+/* ================= run ================= */
+function setStatus(t, err) { const s = $('#status'); s.textContent = t; s.classList.toggle('err', !!err); }
+function setBar(f) { $('#bar').style.width = Math.max(0, Math.min(100, f * 100)) + '%'; }
+const curCount = () => S.route === 'source' ? clampInt($('#scount'), 1, 50, 3) : clampInt($('#count'), 1, 50, 3);
+const curDur = () => S.route === 'source' ? clampInt($('#sdur'), 10, 60, 20) : clampInt($('#dur'), 10, 60, 15);
+function curSources() {
+  if (S.route === 'remix') return S.remixSources;
+  const p = curProj(); return p ? p.scenes.flatMap(s => s.clips) : [];
+}
+async function makePlans(n, onStatus, Ds) {
+  const D = Ds || curDur();
+  if (S.route === 'source') { const p = curProj(); if (!p) throw 'Chọn hoặc tạo một dự án trước.'; return planSource(p, n, D); }
+  const vids = S.remixSources.filter(s => s.kind === 'video');
+  for (let i = 0; i < vids.length; i++) await analyze(vids[i], f => { onStatus?.(`Đang tìm điểm chuyển cảnh: video ${i + 1}/${vids.length}`); setBar((i + f) / vids.length * .5); });
+  if ($('#mode').value !== 'std' && vids.length) {
+    if (!sample) onStatus?.('AI chưa khả dụng nên chạy chế độ Tiêu chuẩn.');
+    else try { await classify(vids, t => onStatus?.(t)); }
+    catch (e) { if (e === 'abort') throw e; vids.forEach(s => { if (s.shotInfo && !s.shotInfo.length) delete s.shotInfo; }); onStatus?.(aiErr(e) + ' Chạy chế độ Tiêu chuẩn.'); $('#mode').value = 'std'; }
+  }
+  return planRemix(S.remixSources, n, D);
+}
+$('#go').onclick = async () => {
+  if (S.busy) return;
+  S.busy = true; S.abort = false;
+  $('#go').disabled = true; $('#stop').hidden = false; $('#reset').disabled = true;
+  const n = curCount(), D = curDur(), kind = S.route;
+  const voiceOn = voiceMode !== 'none';
+  const useAI = !voiceOn && !!($('#desc').value.trim() && sample), sceneMode = $('#struct').value === 'scene';
+  const run = { id: uid(), time: Date.now(), kind, count: n, ok: 0, style: useAI ? $('#style').value : '', project: kind === 'source' ? curProj()?.name : '', status: 'running' };
+  S.runs.push(run); S.lastRunId = run.id; DB.put('runs', run); renderRunResults();
+  try {
+    await ensureAudio(curSources()); await ensureFont();
+    let jobs = null;
+    if (voiceMode === 'ai') {
+      if (!health.tts) throw 'Máy chủ chưa cấu hình GOOGLE_TTS_API_KEY nên chưa dùng được giọng AI.';
+      while (voiceRows.length < n) voiceRows.push({ text: '', url: '', dur: 0, name: '' });
+      const empty = Array.from({ length: n }, (_, i) => i).filter(i => !voiceRows[i].text.trim());
+      if (empty.length) {
+        if (!sample || !$('#desc').value.trim()) throw `Video ${empty.map(i => i + 1).join(', ')} chưa có kịch bản. Nhập mô tả sản phẩm để AI tự viết, hoặc tự gõ kịch bản vào từng ô.`;
+        setStatus(`Claude đang viết ${empty.length} kịch bản…`);
+        const arr = await writeScripts(empty.length, D);
+        empty.forEach((i, k) => { voiceRows[i].text = arr[k].split(/(?<=[.!?…])\s+/).join('\n'); });
+        renderVoiceRows();
+      }
+      for (let i = 0; i < n; i++) { if (S.abort) throw 'abort'; setStatus(`Đang tạo giọng đọc ${i + 1}/${n}…`); setBar(i / n * .3); await synthRow(voiceRows[i]); }
+      renderVoiceRows();
+    }
+    if (pickMode === 'script') {
+      if (!sample) throw 'Dựng theo kịch bản cần AI để xem cảnh quay, nhưng Máy chủ chưa bật AI (thiếu ANTHROPIC_API_KEY).';
+      const miss = Array.from({ length: n }, (_, i) => voiceRows[i]?.text.trim() ? 0 : i + 1).filter(Boolean);
+      if (miss.length) throw `Video ${miss.join(', ')} chưa có kịch bản. Viết hoặc dán kịch bản vào từng ô trước.`;
+      const cat = await buildCatalog(t => setStatus(t)), usage = new Map(); jobs = [];
+      for (let i = 0; i < n; i++) { if (S.abort) throw 'abort'; setStatus(`Claude đang chọn cảnh cho video ${i + 1}/${n}…`); jobs.push(await planFromScript(cat, voiceRows[i], usage)); }
+      overlap(jobs.map(j => j.plan)); jobs.cat = cat;
+    }
+    const Ds = voiceOn ? Array.from({ length: n }, (_, i) => rowVoice(voiceRows[i]) ? Math.min(90, rowVoice(voiceRows[i]).dur + 0.4) : D) : null;
+    const plans = jobs ? jobs.map(j => j.plan) : await makePlans(n, t => setStatus(t), Ds);
+    let scripts = null;
+    if (!jobs && useAI && !sceneMode) {
+      setStatus(`Claude đang viết ${n} kịch bản…`);
+      try { scripts = await writeScripts(n, D); } catch (e) { setStatus(aiErr(e) + ' Tiếp tục không có kịch bản.'); }
+    }
+    for (let i = 0; i < n && !S.abort; i++) {
+      const p = plans[i];
+      let script = scripts?.[i] || '';
+      let subs = script && $('#subs').checked ? subChunks(script, p.D) : null, voice = null, sceneLines = null;
+      if (voiceOn) {
+        const r = voiceRows[i]; script = (r?.text || '').trim(); voice = rowVoice(r);
+        subs = !script || !$('#subs').checked ? null : voice?.lineDurs ? subsFromLines(voice.lines, voice.lineDurs) : subChunks(script, voice ? voice.dur : p.D);
+      }
+      if (jobs) ({ script, subs, voice } = jobs[i]);
+      else if (useAI && sceneMode) {
+        setStatus(`Claude đang xem ${p.clips.length} cảnh và viết kịch bản cho video ${i + 1}/${n}…`);
+        try { const lines = await sceneScript(p); sceneLines = lines; script = lines.map((l, k) => l ? `[Cảnh ${k + 1}] ${l}` : '').filter(Boolean).join('\n'); subs = $('#subs').checked ? sceneSubs(p, lines) : null; }
+        catch (e) { if (e === 'abort') throw e; setStatus(aiErr(e) + ' Video này sẽ không có kịch bản.'); }
+      }
+      setStatus(`Đang dựng video ${i + 1}/${n}…`);
+      const blob = await renderVideo(p, subs, f => setBar((i + f) / n), voice);
+      if (!blob || S.abort) break;
+      const idx = S.outputs.length + 1;
+      const o = { id: uid(), runId: run.id, time: Date.now(), kind, name: `${kind === 'source' ? 'source' : 'ad_remix'}_${String(idx).padStart(3, '0')}.${pick[1]}`,
+        blob, size: blob.size, D: p.D, overlap: p.overlap, script, nClips: p.clips.length, nSrc: new Set(p.clips.map(c => c.src.id)).size, anti: kind === 'remix' ? anti : 0, voice: !!voice };
+      const segs = jobs ? jobs[i].segments : sceneLines ? p.clips.map((c, k) => ({ text: sceneLines[k] || '', clips: [c] })) : [{ text: script, clips: p.clips }];
+      editData.set(o.id, { kind, fx: p.fx, voice, srcs: curSources().slice(), cat: jobs?.cat || null,
+        segments: segs.map(s => ({ text: s.text, clips: s.clips.map(c => ({ ...c })) })) });
+      S.outputs.push(o); DB.put('outputs', o);
+      run.ok++; DB.put('runs', run); renderRunResults();
+    }
+    setBar(1);
+    setStatus(S.abort ? 'Đã dừng. Các video đã xong vẫn ở phần Kết quả.' : `Xong ${run.ok} video.`);
+  } catch (e) {
+    setStatus(e === 'abort' ? 'Đã dừng.' : (typeof e === 'string' ? e : 'Có lỗi: ' + (e?.message || e?.code || e)), e !== 'abort');
+  } finally {
+    run.status = run.ok === n ? 'ok' : run.ok ? 'part' : 'fail'; DB.put('runs', run);
+    S.busy = false; $('#go').disabled = !pick; $('#stop').hidden = true; $('#reset').disabled = false;
+    $('#go').textContent = 'Tạo lại';
+  }
+};
+$('#stop').onclick = () => { S.abort = true; };
+$('#reset').onclick = () => {
+  if (S.busy) return;
+  if (S.route === 'remix') loadRemixExamples();
+  $('#desc').value = ''; $('#extra').value = ''; $('#scriptPreview').hidden = true; S.lastRunId = null; renderRunResults();
+  setBar(0); $('#go').textContent = 'Bắt đầu tạo video'; setStatus('Đã làm mới.');
+};
+
+/* ================= result cards ================= */
+function makeCard(o) {
+  const ovc = o.overlap < 20 ? ['lo', 'Trùng thấp'] : o.overlap < 50 ? ['mid', 'Trùng vừa'] : ['hi', 'Trùng cao'];
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<video controls playsinline preload="metadata"></video><div class="cb">
+    <h3></h3><div class="tags"></div><span class="hint"></span><span class="ov ${ovc[0]}"></span>
+    <div class="script" hidden></div><span class="mono"></span>
+    <div class="row"><button class="btn small" data-a="dl">Tải xuống</button><button class="btn small" data-a="edit" hidden>✎ Sửa video</button><span class="hint sv"></span></div></div>`;
+  const eb = card.querySelector('[data-a=edit]');
+  if (editData.has(o.id)) { eb.hidden = false; eb.onclick = () => openEditor(o); }
+  o.url = o.url || URL.createObjectURL(o.blob);
+  card.querySelector('video').src = o.url;
+  card.querySelector('h3').textContent = o.name;
+  const tags = card.querySelector('.tags'), addTag = t => { const s = document.createElement('span'); s.className = 'tag'; s.textContent = t; tags.appendChild(s); };
+  addTag(o.kind === 'source' ? 'Source' : 'Remix');
+  if (o.voice) addTag('Giọng đọc');
+  if (o.script) addTag(o.voice ? 'Phụ đề' : 'Kịch bản AI');
+  if (o.anti) addTag('Chống trùng ' + ['', 'nhẹ', 'vừa', 'mạnh'][o.anti]);
+  card.querySelector('.hint').textContent = `${o.nClips} cảnh từ ${o.nSrc} video gốc`;
+  card.querySelector('.ov').textContent = `Trùng ${o.overlap}% với video khác · ${ovc[1]}`;
+  if (o.script) { const sc = card.querySelector('.script'); sc.hidden = false; sc.textContent = o.script; }
+  card.querySelector('.mono').textContent = `1080×1920 · ${fmtS(o.D)} · 9:16 · ${fmtMB(o.size)}`;
+  card.querySelector('[data-a=dl]').onclick = () => saveFile(o.name, o.blob, card.querySelector('.sv'));
+  if (o.version > 1) addTag('Đã sửa · bản ' + o.version);
+  return card;
+}
+function renderRunResults() {
+  const box = $('#results'); box.innerHTML = '';
+  const list = S.outputs.filter(o => o.runId === S.lastRunId);
+  list.forEach(o => box.appendChild(makeCard(o)));
+  $('#zipAll').disabled = !list.length;
+  if (!list.length) { $('#sum').textContent = 'Chưa có video nào. Video tạo xong sẽ hiện ở đây.'; return; }
+  const avg = Math.round(list.reduce((a, x) => a + x.overlap, 0) / list.length);
+  $('#sum').textContent = `Đã tạo ${list.length} video` + (list.some(x => x.script) ? ' với kịch bản AI khác nhau' : '') + ` · Độ trùng trung bình ${avg}%.`;
+}
+async function saveFile(name, blob, note) {
+  if (!downloads) { note.textContent = 'Chế độ xem này không cho lưu file. Bấm ⋮ trên video và chọn Tải xuống.'; return; }
+  try { await downloads.save({ filename: name, data: blob }); note.textContent = 'Đã lưu.'; }
+  catch (e) { note.textContent = e?.code === 'declined' ? 'Bạn đã hủy.' : e?.code === 'rate_limited' ? 'Đang có hộp thoại lưu khác, thử lại sau.' : `Không lưu được (${e?.code || 'lỗi'}).`; }
+}
+async function zipSave(list, filename, note, btn) {
+  if (!window.JSZip) { note.textContent = 'Không tải được thư viện nén. Hãy tải từng video.'; return; }
+  btn.disabled = true; note.textContent = 'Đang nén…';
+  try {
+    const zip = new JSZip(); list.forEach(o => zip.file(o.name, o.blob));
+    await saveFile(filename, await zip.generateAsync({ type: 'blob', compression: 'STORE' }), note);
+  } catch (e) { note.textContent = 'Không nén được: ' + (e?.message || e); }
+  finally { btn.disabled = false; }
+}
+$('#zipAll').onclick = () => { const list = S.outputs.filter(o => o.runId === S.lastRunId); zipSave(list, `remix_${list.length}_video.zip`, $('#zipNote'), $('#zipAll')); };
+
+/* ================= video editor: change scenes / lines / voice, then re-render one video ================= */
+const editData = new Map();
+let editing = null;
+function clipLabel(c) { return `${c.src.name}${c.sceneName ? ' · ' + c.sceneName : ''} · ${fmtT(c.start)}–${fmtT(c.start + c.len)}`; }
+function setClipShow(c, fx, v) {
+  const want = Math.max(0.5, v) * fx.speed, max = c.src.dur;
+  if (c.start + want > max) c.start = Math.max(0, max - want);
+  c.len = Math.min(want, max - c.start); c.show = c.len / fx.speed;
+}
+// a different piece of footage of about the same length (same scene first on Source projects)
+function altClip(c, E, inUse) {
+  const want = c.show * E.fx.speed;
+  let pool = c.scene ? c.scene.clips : E.srcs;
+  if (!pool.length) pool = E.srcs;
+  const shots = pool.flatMap(s => (s.shots || [[0, s.dur]]).map(sh => ({ src: s, a: sh[0], b: sh[1] })));
+  let cands = shots.filter(x => !(x.src === c.src && x.a <= c.start && c.start < x.b) && !inUse.has(x.src.id + ':' + x.a.toFixed(2)) && x.b - x.a >= 0.8);
+  if (!cands.length) cands = shots.filter(x => !(x.src === c.src && x.a <= c.start && c.start < x.b));
+  if (!cands.length) cands = shots;
+  const x = cands[Math.floor(Math.random() * cands.length)];
+  const len = Math.min(want, x.b - x.a), start = x.a + Math.random() * Math.max(0, x.b - x.a - len);
+  const k = x.src.shots?.findIndex(sh => sh[0] === x.a);
+  return { ...c, src: x.src, start, len, show: len / E.fx.speed, info: k >= 0 ? x.src.shotInfo?.[k] || { face: x.src.shotDesc?.[k]?.face } : null, key: x.src.id + ':' + x.a.toFixed(2) };
+}
+const thumbCache = new Map();
+async function clipThumb(c, img) {
+  const key = c.src.id + '@' + c.start.toFixed(2);
+  if (thumbCache.has(key)) { img.src = thumbCache.get(key); return; }
+  if (S.busy) return;
+  const cv2 = document.createElement('canvas'), g = cv2.getContext('2d');
+  const blob = await grabAt(c.src, c.start + c.len / 2, cv2, g);
+  const url = URL.createObjectURL(blob); thumbCache.set(key, url); img.src = url;
+}
+function openEditor(o) {
+  if (S.busy) return;
+  const E = editData.get(o.id); if (!E) return;
+  if (S.lastRunId !== o.runId) { S.lastRunId = o.runId; renderRunResults(); }
+  if (S.route !== E.kind || location.hash.slice(1) !== E.kind) location.hash = E.kind;
+  editing = { o, E }; renderEditor();
+  setTimeout(() => $('#editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 50);
+}
+function renderEditor() {
+  const box = $('#editor');
+  if (!editing) { box.hidden = true; box.innerHTML = ''; return; }
+  const { o, E } = editing; box.hidden = false;
+  const total = E.segments.reduce((a, s) => a + s.clips.reduce((b, c) => b + c.show, 0), 0);
+  const many = E.segments.length > 1;
+  box.innerHTML = `<div class="row" style="justify-content:space-between"><h3></h3><button class="btn small" data-a="close">Đóng</button></div>
+    <p class="hint" data-a="sum"></p><div style="display:grid;gap:10px" data-a="segs"></div>
+    <div class="row"><button class="btn small" data-a="addseg">+ Thêm câu</button></div>
+    <div class="field"><span class="lbl">Nhờ AI sửa lời</span><div class="row" style="flex-wrap:nowrap"><input type="text" id="edAsk" placeholder="VD: vui hơn, nhắc freeship, câu đầu là câu hỏi" style="flex:1;min-width:0"><button class="btn small" data-a="ask">AI sửa lời</button></div></div>
+    <div class="row"><button class="btn small" data-a="fx">Đổi hiệu ứng chống trùng</button><label class="btn small" for="edVoice">Thay giọng đọc</label><input type="file" id="edVoice" accept="audio/*,video/mp4,video/quicktime" hidden><button class="btn small danger" data-a="novoice">Bỏ giọng đọc</button></div>
+    <p class="hint">Kiểu phụ đề, nhạc nền và âm lượng lấy theo cài đặt hiện tại ở bước Kịch bản.</p>
+    <div class="row"><button class="btn primary" data-a="render">Dựng lại video này</button><span class="status" data-a="st"></span></div>`;
+  box.querySelector('h3').textContent = 'Sửa video: ' + o.name;
+  const sum = box.querySelector('[data-a=sum]');
+  sum.textContent = `Tổng ${fmtS(total)} · ${E.segments.reduce((a, s) => a + s.clips.length, 0)} cảnh` + (E.voice ? ` · giọng đọc ${fmtS(E.voice.dur)}` : ' · không có giọng đọc');
+  if (E.voice && Math.abs(total - E.voice.dur - 0.4) > 0.6) { sum.textContent += ' · Hình đang lệch với giọng, hãy chỉnh số giây cho khớp.'; sum.style.color = 'var(--warn)'; }
+  box.querySelector('[data-a=fx]').hidden = E.kind !== 'remix' || !anti;
+  box.querySelector('[data-a=novoice]').hidden = !E.voice;
+  const segBox = box.querySelector('[data-a=segs]');
+  const inUse = new Set(E.segments.flatMap(s => s.clips.map(c => c.key)));
+  E.segments.forEach((seg, j) => {
+    const d = document.createElement('div'); d.className = 'eseg';
+    const sd = seg.clips.reduce((a, c) => a + c.show, 0);
+    d.innerHTML = `<div class="row" style="justify-content:space-between"><b>${many ? 'Câu ' + (j + 1) : 'Lời phụ đề'}</b><div class="row" style="gap:6px"><span class="mono">${sd.toFixed(1)}s</span>
+      <button class="btn small" data-a="ai" ${E.cat && sample ? '' : 'hidden'}>AI chọn lại cảnh</button><button class="btn small danger" data-a="delseg" ${many ? '' : 'hidden'}>Xóa câu</button></div></div>
+      <textarea placeholder="Lời phụ đề cho đoạn này (để trống nếu không cần)"></textarea><div class="eclips"></div>
+      <div class="row"><button class="btn small" data-a="addclip">+ Thêm cảnh</button></div>`;
+    const ta = d.querySelector('textarea'); ta.value = seg.text; ta.oninput = () => { seg.text = ta.value; };
+    d.querySelector('[data-a=delseg]').onclick = () => { E.segments.splice(j, 1); renderEditor(); };
+    d.querySelector('[data-a=addclip]').onclick = () => {
+      const base = seg.clips[seg.clips.length - 1] || E.segments.flatMap(s => s.clips)[0];
+      if (!base) return; seg.clips.push(altClip({ ...base, show: 2.5, len: 2.5 * E.fx.speed }, E, inUse)); renderEditor();
+    };
+    d.querySelector('[data-a=ai]').onclick = async e => {
+      e.target.disabled = true; e.target.textContent = 'Claude đang chọn…';
+      try {
+        const usage = new Map(); E.segments.forEach(s => s !== seg && s.clips.forEach(c => usage.set(c.key, (usage.get(c.key) || 0) + 2)));
+        seg.clips.forEach(c => usage.set(c.key, (usage.get(c.key) || 0) + 3));
+        const [ids] = await matchLines(E.cat, [seg.text || 'cảnh sản phẩm'], [sd], usage);
+        seg.clips = fillClips(E.cat, ids || [], sd, E.fx, usage, new Set(seg.clips.map(c => c.key)));
+      } catch (er) { box.querySelector('[data-a=st]').textContent = typeof er === 'string' ? er : aiErr(er); }
+      renderEditor();
+    };
+    const cl = d.querySelector('.eclips');
+    seg.clips.forEach((c, k) => {
+      const r = document.createElement('div'); r.className = 'eclip';
+      r.innerHTML = `<img alt=""><div class="nm" style="white-space:normal"><small></small></div><input type="number" min="0.5" max="30" step="0.1" aria-label="Số giây"><div class="acts"><button data-a="up" aria-label="Đưa lên">↑</button><button data-a="down" aria-label="Đưa xuống">↓</button><button data-a="swap">Đổi cảnh</button><button data-a="rm" aria-label="Xóa cảnh">✕</button></div>`;
+      r.querySelector('small').textContent = clipLabel(c);
+      const inp = r.querySelector('input'); inp.value = c.show.toFixed(1);
+      inp.onchange = () => { setClipShow(c, E.fx, parseFloat(inp.value) || c.show); renderEditor(); };
+      const list = seg.clips;
+      r.querySelector('[data-a=up]').onclick = () => { if (k > 0) { [list[k - 1], list[k]] = [list[k], list[k - 1]]; renderEditor(); } else if (j > 0) { E.segments[j - 1].clips.push(list.splice(k, 1)[0]); renderEditor(); } };
+      r.querySelector('[data-a=down]').onclick = () => { if (k < list.length - 1) { [list[k + 1], list[k]] = [list[k], list[k + 1]]; renderEditor(); } else if (j < E.segments.length - 1) { E.segments[j + 1].clips.unshift(list.splice(k, 1)[0]); renderEditor(); } };
+      r.querySelector('[data-a=swap]').onclick = () => { list[k] = altClip(c, E, inUse); renderEditor(); };
+      r.querySelector('[data-a=rm]').onclick = () => { list.splice(k, 1); renderEditor(); };
+      cl.appendChild(r);
+      clipThumb(c, r.querySelector('img')).catch(() => {});
+    });
+    segBox.appendChild(d);
+  });
+  box.querySelector('[data-a=close]').onclick = () => { editing = null; renderEditor(); };
+  box.querySelector('[data-a=addseg]').onclick = () => {
+    const last = E.segments[E.segments.length - 1]?.clips.slice(-1)[0] || E.segments.flatMap(s => s.clips)[0];
+    E.segments.push({ text: '', clips: last ? [altClip({ ...last, show: 3, len: 3 * E.fx.speed }, E, inUse)] : [] }); renderEditor();
+  };
+  box.querySelector('[data-a=fx]').onclick = e => { E.fx = variation(anti); E.segments.forEach(s => s.clips.forEach(c => setClipShow(c, E.fx, c.show))); e.target.textContent = 'Đã đổi hiệu ứng'; };
+  box.querySelector('[data-a=novoice]').onclick = () => { E.voice = null; renderEditor(); };
+  box.querySelector('#edVoice').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    const url = URL.createObjectURL(f), a = new Audio(); a.preload = 'metadata'; a.src = url; await once(a, 'loadedmetadata', 6000);
+    if (!isFinite(a.duration) || !a.duration) { box.querySelector('[data-a=st]').textContent = 'Không đọc được file giọng này.'; return; }
+    E.voice = { url, dur: a.duration, name: f.name };
+    // stretch scenes so the picture covers the new voice
+    const cur = E.segments.reduce((x, s) => x + s.clips.reduce((y, c) => y + c.show, 0), 0), k = (a.duration + 0.4) / (cur || 1);
+    E.segments.forEach(s => s.clips.forEach(c => setClipShow(c, E.fx, c.show * k)));
+    renderEditor();
+  };
+  box.querySelector('[data-a=ask]').onclick = async e => {
+    const ask = $('#edAsk').value.trim(), st = box.querySelector('[data-a=st]');
+    if (!sample) { st.textContent = 'Máy chủ chưa bật AI (thiếu ANTHROPIC_API_KEY).'; return; }
+    if (!ask) { $('#edAsk').focus(); return; }
+    e.target.disabled = true; st.textContent = 'Claude đang sửa lời…';
+    try {
+      const segs = E.segments, res = await sample.json(
+        `Sửa lời phụ đề video quảng cáo theo yêu cầu của người bán.
+Yêu cầu: """${ask}"""
+Lời hiện tại gồm ${segs.length} đoạn, mỗi đoạn có số giây cố định nên giữ độ dài tương đương (khoảng 2,6 từ mỗi giây):
+${segs.map((s, i) => `${i + 1}. (${s.clips.reduce((a, c) => a + c.show, 0).toFixed(1)}s) ${s.text || '(trống)'}`).join('\n')}
+Thông tin sản phẩm (không bịa thêm giá hay khuyến mãi ngoài thông tin này): """${$('#desc').value.trim() || 'không có'}"""
+Chỉ trả về JSON: {"lines":["đoạn 1","đoạn 2"]} với đúng ${segs.length} phần tử.`, { modelTier: 'default', cache: false });
+      (res?.lines || []).forEach((l, i) => { if (segs[i] && typeof l === 'string') segs[i].text = l.trim(); });
+      renderEditor(); box.querySelector('[data-a=st]').textContent = 'Đã sửa lời. Xem lại rồi bấm Dựng lại.';
+    } catch (er) { st.textContent = aiErr(er); e.target.disabled = false; }
+  };
+  box.querySelector('[data-a=render]').onclick = () => rerender();
+}
+async function rerender() {
+  if (S.busy || !editing) return;
+  const { o, E } = editing, st = $('#editor [data-a=st]');
+  const clips = [], subs = []; let t = 0;
+  for (const seg of E.segments) {
+    const t0 = t; seg.clips.forEach(c => { clips.push(c); t += c.show; });
+    if (seg.text.trim() && $('#subs').checked && t > t0) subChunks(seg.text, t - t0).forEach(s => subs.push({ a: t0 + s.a, b: t0 + s.b, text: s.text }));
+  }
+  if (!clips.length) { st.textContent = 'Video cần ít nhất 1 cảnh.'; return; }
+  S.busy = true; S.abort = false;
+  $$('#editor button').forEach(b => b.disabled = true); $('#go').disabled = true; $('#stop').hidden = false;
+  try {
+    await ensureAudio(clips.map(c => c.src)); await ensureFont();
+    st.textContent = 'Đang dựng lại…'; setStatus(`Đang dựng lại ${o.name}…`);
+    const blob = await renderVideo({ clips, fx: E.fx, D: t }, subs, f => setBar(f), E.voice);
+    if (!blob || S.abort) { setStatus('Đã dừng dựng lại, video cũ được giữ nguyên.'); return; }
+    if (o.url) URL.revokeObjectURL(o.url);
+    o.version = (o.version || 1) + 1;
+    Object.assign(o, { blob, size: blob.size, D: t, url: null, time: Date.now(), voice: !!E.voice,
+      name: o.name.replace(/(_v\d+)?\.(mp4|webm)$/, `_v${o.version}.${pick[1]}`),
+      script: E.segments.length > 1 ? E.segments.map((s, i) => s.text ? `[Câu ${i + 1}] ${s.text}` : '').filter(Boolean).join('\n') : E.segments[0].text,
+      nClips: clips.length, nSrc: new Set(clips.map(c => c.src.id)).size });
+    DB.put('outputs', o);
+    setBar(1); setStatus(`Đã dựng lại ${o.name}.`);
+    editing = null; renderEditor(); renderRunResults();
+  } catch (e) { setStatus('Có lỗi khi dựng lại: ' + (e?.message || e?.code || e), true); }
+  finally { S.busy = false; $('#go').disabled = !pick; $('#stop').hidden = true; $$('#editor button').forEach(b => b.disabled = false); }
+}
+
+/* ================= LIBRARY ================= */
+function renderLibrary() {
+  const box = $('#groups'); box.innerHTML = '';
+  const runs = S.runs.filter(r => S.outputs.some(o => o.runId === r.id)).sort((a, b) => b.time - a.time);
+  if (!runs.length) { box.innerHTML = '<div class="empty">Chưa có video nào. Tạo video ở mục <a href="#remix">Remix video</a> hoặc <a href="#source">Tạo Source Video</a>.</div>'; return; }
+  for (const r of runs) {
+    const list = S.outputs.filter(o => o.runId === r.id), size = list.reduce((a, o) => a + o.size, 0);
+    const left = Math.max(0, Math.ceil((r.time + KEEP_DAYS * DAY - Date.now()) / DAY));
+    const g = document.createElement('div'); g.className = 'group';
+    g.innerHTML = `<header><div><b></b><div class="hint"></div></div><div class="row"><button class="btn small primary">⬇ Tải tất cả ${list.length} video</button><span class="hint">Còn ${left} ngày</span><button class="x" aria-label="Xóa lần tạo này">✕</button></div></header><div class="results"></div><p class="hint zn" style="padding:0 16px 12px"></p>`;
+    g.querySelector('header b').textContent = fmtTime(r.time);
+    g.querySelector('header .hint').textContent = `${list.length} video · ${fmtMB(size)} · ${r.kind === 'source' ? 'Source' + (r.project ? ': ' + r.project : '') : 'Remix'}`;
+    const btn = g.querySelector('header .btn');
+    btn.onclick = () => zipSave(list, `video_${fmtTime(r.time).replace(/[\/: ]/g, '-')}.zip`, g.querySelector('.zn'), btn);
+    g.querySelector('header .x').onclick = async () => { for (const o of list) { await DB.del('outputs', o.id); if (o.url) URL.revokeObjectURL(o.url); } S.outputs = S.outputs.filter(o => o.runId !== r.id); renderLibrary(); renderRunResults(); };
+    const rs = g.querySelector('.results'); list.forEach(o => rs.appendChild(makeCard(o)));
+    box.appendChild(g);
+  }
+}
+
+/* ================= AUTOPOST (schedule planner) ================= */
+let schedule = [];
+function renderPick() {
+  const box = $('#pick'); box.innerHTML = '';
+  const list = [...S.outputs].sort((a, b) => b.time - a.time);
+  $('#pickInfo').textContent = list.length ? `${list.length} video có thể lên lịch` : '';
+  if (!list.length) { box.innerHTML = '<div class="empty">Chưa có video đã tạo để lên lịch.</div>'; }
+  for (const o of list) {
+    const l = document.createElement('label');
+    l.innerHTML = `<input type="checkbox" checked><span class="nm"></span><span class="mono"></span>`;
+    l.querySelector('input').dataset.id = o.id; l.querySelector('.nm').textContent = o.name; l.querySelector('.mono').textContent = fmtTime(o.time);
+    box.appendChild(l);
+  }
+  if (!$('#apDate').value) { const d = new Date(Date.now() + DAY); $('#apDate').value = d.toISOString().slice(0, 10); }
+}
+$('#pickAll').onclick = () => { const all = $$('#pick input'); const on = !all.every(i => i.checked); all.forEach(i => i.checked = on); };
+$('#apMake').onclick = () => {
+  const ids = $$('#pick input').filter(i => i.checked).map(i => i.dataset.id);
+  const vids = ids.map(id => S.outputs.find(o => o.id === id)).filter(Boolean);
+  if (!vids.length) { $('#apNote').textContent = 'Chọn ít nhất 1 video.'; return; }
+  const per = clampInt($('#apPer'), 1, 15, 3); let a = clampInt($('#apFrom'), 0, 23, 11), b = clampInt($('#apTo'), 0, 23, 21); if (b <= a) b = Math.min(23, a + 1);
+  const [y, m, d] = ($('#apDate').value || new Date().toISOString().slice(0, 10)).split('-').map(Number);
+  schedule = vids.map((o, i) => {
+    const day = Math.floor(i / per), slot = i % per;
+    const mins = a * 60 + (per > 1 ? Math.round(slot * (b - a) * 60 / (per - 1)) : 0);
+    return { o, at: new Date(y, m - 1, d + day, Math.floor(mins / 60), mins % 60), caption: schedule.find(s => s.o.id === o.id)?.caption || '' };
+  });
+  $('#apNote').textContent = `${schedule.length} bài trong ${Math.ceil(schedule.length / per)} ngày.`;
+  $('#apCap').disabled = !sample; $('#apCsv').disabled = false; renderSchedule();
+};
+function renderSchedule() {
+  const tb = $('#apBody'); tb.innerHTML = ''; $('#apTableWrap').hidden = !schedule.length;
+  schedule.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="n">${i + 1}</td><td class="n"></td><td></td><td></td><td><button class="btn small">Copy</button></td>`;
+    tr.children[1].textContent = fmtTime(s.at); tr.children[2].textContent = s.o.name;
+    tr.children[3].textContent = s.caption || '—';
+    tr.querySelector('button').onclick = async e => { try { await navigator.clipboard.writeText(s.caption); e.target.textContent = 'Đã copy'; } catch (er) { const r = document.createRange(); r.selectNodeContents(tr.children[3]); getSelection().removeAllRanges(); getSelection().addRange(r); e.target.textContent = 'Bấm Ctrl+C'; } };
+    tb.appendChild(tr);
+  });
+}
+$('#apCap').onclick = async () => {
+  const info = $('#apDesc').value.trim() || $('#desc').value.trim();
+  if (!info) { $('#apNote').textContent = 'Nhập thông tin sản phẩm để AI viết caption.'; return; }
+  $('#apCap').disabled = true; $('#apNote').textContent = 'Claude đang viết caption…';
+  try {
+    const res = await sample.json(
+      `Viết ${schedule.length} caption TikTok KHÁC NHAU cho ${schedule.length} video quảng cáo cùng một sản phẩm.
+Mỗi caption: 1–2 câu tiếng Việt ngắn gọn, có kêu gọi hành động, kèm 3–5 hashtag liên quan ở cuối. Không bịa giá hay khuyến mãi ngoài thông tin dưới đây.
+${schedule.map((s, i) => `Video ${i + 1}: ${s.o.script ? 'lời thoại: ' + s.o.script.slice(0, 300) : '(không có lời thoại)'}`).join('\n')}
+Thông tin sản phẩm:
+"""${info}"""
+Chỉ trả về JSON: {"captions":["caption 1","caption 2"]}`, { modelTier: 'default', cache: false });
+    (res?.captions || []).forEach((c, i) => { if (schedule[i] && typeof c === 'string') schedule[i].caption = c.trim(); });
+    $('#apNote').textContent = 'Đã viết caption.'; renderSchedule();
+  } catch (e) { $('#apNote').textContent = aiErr(e); }
+  finally { $('#apCap').disabled = !sample; }
+};
+$('#apCsv').onclick = () => {
+  const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const csv = '﻿' + [['STT', 'Ngày giờ', 'Video', 'Caption'].map(esc).join(','), ...schedule.map((s, i) => [i + 1, fmtTime(s.at), s.o.name, s.caption].map(esc).join(','))].join('\r\n');
+  saveFile('lich-dang-video.csv', csv, $('#apNote'));
+};
+
+/* ================= LOG ================= */
+function renderLog() {
+  const runs = [...S.runs].sort((a, b) => b.time - a.time);
+  const ok = runs.reduce((a, r) => a + r.ok, 0), asked = runs.reduce((a, r) => a + r.count, 0);
+  $('#lgRuns').textContent = runs.length; $('#lgOk').textContent = ok; $('#lgFail').textContent = Math.max(0, asked - ok); $('#lgKept').textContent = S.outputs.length;
+  const tb = $('#lgBody'); tb.innerHTML = '';
+  if (!runs.length) { tb.innerHTML = '<tr><td colspan="5" class="hint">Chưa có lần tạo nào.</td></tr>'; return; }
+  for (const r of runs) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="n"></td><td><b></b><div class="hint"></div></td><td class="n"></td><td></td><td><span class="chip"></span></td>`;
+    tr.children[0].textContent = fmtTime(r.time);
+    tr.querySelector('b').textContent = 'Tạo video · ' + (r.kind === 'source' ? 'Source' : 'Remix');
+    tr.querySelector('.hint').textContent = r.project || '';
+    tr.children[2].textContent = r.count;
+    tr.children[3].innerHTML = r.style ? `<span class="chip">${STYLE_NAME[r.style]}</span>` : '<span class="hint">—</span>';
+    const chip = tr.querySelector('td:last-child .chip');
+    chip.textContent = r.status === 'running' ? 'Đang chạy' : `${r.ok}/${r.count} xong`;
+    if (r.status !== 'running') chip.classList.add(r.status === 'ok' ? 'ok' : 'part');
+    tb.appendChild(tr);
+  }
+}
+
+/* ================= ACCOUNT ================= */
+async function renderAccount() {
+  try {
+    const e = await navigator.storage?.estimate?.();
+    if (e) { $('#acStore').textContent = `${fmtMB(e.usage || 0)} / ${fmtMB(e.quota || 0)}`; $('#acBar').style.width = Math.min(100, (e.usage || 0) / (e.quota || 1) * 100) + '%'; }
+  } catch (er) {}
+}
+let acAction = null;
+$('#acClearOut').onclick = () => { acAction = 'out'; $('#acConfirmTxt').textContent = `Xóa ${S.outputs.length} video đã tạo?`; $('#acConfirm').hidden = false; };
+$('#acClearAll').onclick = () => { acAction = 'all'; $('#acConfirmTxt').textContent = 'Xóa toàn bộ dự án, clip, video và nhật ký?'; $('#acConfirm').hidden = false; };
+$('#acNo').onclick = () => { $('#acConfirm').hidden = true; };
+$('#acYes').onclick = async () => {
+  await DB.clear('outputs'); S.outputs.forEach(o => o.url && URL.revokeObjectURL(o.url)); S.outputs = [];
+  if (acAction === 'all') { await DB.clear('projects'); await DB.clear('clips'); await DB.clear('runs'); S.runs = []; await loadProjects(); }
+  $('#acConfirm').hidden = true; renderRunResults(); renderAccount();
+};
+
+/* ================= boot ================= */
+document.addEventListener('visibilitychange', () => { if (document.hidden && S.busy) setStatus('Tab đang bị ẩn nên việc dựng video có thể bị dừng. Hãy quay lại tab này.', true); });
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { localStorage.setItem('rs-pass', $('#loginPass').value); } catch (er) {}
+  await checkHealth();
+});
+(async () => {
+  checkHealth();
+  loadRemixExamples();
+  { const s = S.remixSources[0]; s.draw(2); drawFrame(s.canvas, 540, 960, {}, variation(0), 0, null); }
+  // drop outputs older than 7 days, then load history
+  const outs = await DB.all('outputs'), now = Date.now();
+  for (const o of outs) if (now - o.time > KEEP_DAYS * DAY) await DB.del('outputs', o.id);
+  S.outputs = outs.filter(o => now - o.time <= KEEP_DAYS * DAY).sort((a, b) => a.time - b.time);
+  S.runs = (await DB.all('runs')).map(r => r.status === 'running' ? { ...r, status: r.ok === r.count ? 'ok' : r.ok ? 'part' : 'fail' } : r);
+  await loadProjects();
+  route();
+})();
+})();
+</script>
+
+</body>
+</html>
