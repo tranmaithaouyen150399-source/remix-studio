@@ -4,9 +4,11 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const PORT = Number(process.env.PORT) || 3000;
 const APP_PASSWORD = process.env.APP_PASSWORD || "";
-const TTS_KEY = process.env.GOOGLE_TTS_API_KEY || "";
+// a placeholder such as "-" or "none" (Render asks for every value up front) counts as not configured
+const realKey = (v) => (v && v.trim().length >= 20 ? v.trim() : "");
+const TTS_KEY = realKey(process.env.GOOGLE_TTS_API_KEY);
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+const anthropic = realKey(process.env.ANTHROPIC_API_KEY) ? new Anthropic({ apiKey: realKey(process.env.ANTHROPIC_API_KEY) }) : null;
 
 const app = express();
 app.disable("x-powered-by");
